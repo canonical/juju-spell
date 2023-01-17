@@ -1,5 +1,4 @@
 import io
-import subprocess
 import unittest
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
@@ -68,71 +67,38 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connect_manager1, connect_manager2)
         self.assertEqual(connect_manager1.connections, connect_manager2.connections)
 
-    async def _test_connection(self, mock_controller, config, endpoint, **kwargs):
-        """Help function to test connection."""
+    @mock.patch("juju_spell.connections.manager.juju.Controller")
+    async def test_connect(self, mock_controller):
+        """Test connection with direct access."""
+        config = self.controller_config_2
+        port_range = range(17071, 17170)
+        exp_endpoint = "localhost:17071"
+
         mocked_controller = mock_controller.return_value = AsyncMock()
-        controller = await self.connect_manager._connect(
-            config, range(17071, 17170), **kwargs
-        )
+        with mock.patch(
+            "juju_spell.connections.manager.get_connection"
+        ) as mock_get_connection:
+            mock_get_connection.return_value = exp_endpoint, MagicMock()
+            controller = await self.connect_manager._connect(config, port_range)
+            mock_get_connection.assert_called_once_with(config, port_range, False)
 
         assert controller == mocked_controller
         mocked_controller.connect.assert_called_once_with(
-            endpoint=endpoint,
+            endpoint=exp_endpoint,
             username=config.username,
             password=config.password,
             cacert=config.ca_cert,
         )
         assert config.name in self.connect_manager.connections
 
-    @mock.patch("juju_spell.connections.manager.juju.Controller")
-    async def test_connect(self, mock_controller):
-        """Test connection with direct access."""
-        config = self.controller_config_2
-        await self._test_connection(mock_controller, config, config.endpoint)
-
-    @mock.patch("juju_spell.connections.manager.ssh_port_forwarding_proc")
-    @mock.patch("juju_spell.connections.manager.get_free_tcp_port", return_value=17070)
-    @mock.patch("juju_spell.connections.manager.juju.Controller")
-    async def test_connect_ssh_tunel(
-        self, mock_controller, mock_get_free_tcp_port, mock_ssh_port_forwarding_proc
-    ):
-        """Test connection with ssh tunnel."""
-        config = self.controller_config_1
-
-        await self._test_connection(mock_controller, config, "localhost:17070")
-        mock_get_free_tcp_port.assert_called_once()
-        mock_ssh_port_forwarding_proc.assert_called_once_with(
-            "localhost:17070",
-            config.endpoint,
-            config.connection.destination,
-            config.connection.jumps,
-        )
-
-    @mock.patch("juju_spell.connections.manager.sshuttle_proc")
-    @mock.patch("juju_spell.connections.manager.juju.Controller")
-    async def test_connect_sshuttle(self, mock_controller, mock_sshuttle_proc):
-        """Test connection with sshuttle."""
-        config = self.controller_config_1
-
-        await self._test_connection(
-            mock_controller, config, config.endpoint, sshuttle=True
-        )
-        mock_sshuttle_proc.assert_called_once_with(
-            config.connection.subnets,
-            config.connection.destination,
-            config.connection.jumps,
-        )
-
     async def test_clean(self):
         """Test clean function."""
         from juju_spell.connections.manager import Connection
 
-        # define mecked connections
+        # define mocked connections
         connections = []
         for i in range(10):
-            controller = AsyncMock()
-            connection_process = None if i >= 5 else MagicMock(spec=subprocess.Popen)
-            connection = Connection(controller, connection_process)
+            connection = Connection(AsyncMock(), MagicMock())
             self.connect_manager.connections[f"test-{i}"] = connection
             connections.append(connection)
 
@@ -142,9 +108,8 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
         await self.connect_manager.clean()
         assert len(self.connect_manager.connections) == 0
         for connection in connections:
-            connection.controller.disconnect.assert_called_once()
-            if connection.connection_process is not None:
-                connection.connection_process.terminate.assert_called_once()
+            connection.controller.disconnect.awaited_once()
+            connection.connection_process.clean.assert_called_once()
 
     async def test_get_controller_invalid_controller_config(self):
         """Test function to get controller with invalid controller config."""

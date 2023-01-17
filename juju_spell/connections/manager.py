@@ -1,16 +1,11 @@
 import dataclasses
 import logging
-import subprocess
-from typing import Dict, Optional
+from typing import Dict
 
 from juju import juju
 
 from juju_spell.config import Controller
-from juju_spell.connections.network import (
-    get_free_tcp_port,
-    ssh_port_forwarding_proc,
-    sshuttle_proc,
-)
+from juju_spell.connections.network import BaseConnection, get_connection
 from juju_spell.settings import JUJUSPELL_DEFAULT_PORT_RANGE
 
 logger = logging.getLogger(__name__)
@@ -21,7 +16,7 @@ MAX_FRAME_SIZE = 6**24
 @dataclasses.dataclass
 class Connection:
     controller: juju.Controller
-    connection_process: Optional[subprocess.Popen]
+    connection_process: BaseConnection
 
 
 class ConnectManager(object):
@@ -76,26 +71,13 @@ class ConnectManager(object):
         """Prepare connection to Controller and return it."""
         logger.info("getting a new connection to controller %s", controller_config.name)
         controller = juju.Controller(max_frame_size=MAX_FRAME_SIZE)
-        local_endpoint = None
-        connection_process = None
-        if controller_config.connection and not sshuttle:
-            port = get_free_tcp_port(port_range)
-            local_endpoint = f"localhost:{port}"
-            connection_process = ssh_port_forwarding_proc(
-                local_endpoint,
-                controller_config.endpoint,
-                controller_config.connection.destination,
-                controller_config.connection.jumps,
-            )
-        elif controller_config.connection and sshuttle:
-            connection_process = sshuttle_proc(
-                controller_config.connection.subnets,
-                controller_config.connection.destination,
-                controller_config.connection.jumps,
-            )
+        controller_endpoint, connection_process = get_connection(
+            controller_config, port_range, sshuttle
+        )
+        connection_process.connect()
 
         await controller.connect(
-            endpoint=local_endpoint or controller_config.endpoint,
+            endpoint=controller_endpoint,
             username=controller_config.username,
             password=controller_config.password,
             cacert=controller_config.ca_cert,
@@ -108,18 +90,15 @@ class ConnectManager(object):
 
     async def clean(self):
         """Close all connections."""
-        controllers = self.connections.copy().keys()  # get keys from copy
-        for name in controllers:
+        for name in self.connections.keys():
             connection = self.connections[name]
-            await connection.controller.disconnect()
-            # if any connection process was used kill it
-            if connection.connection_process:
-                connection.connection_process.terminate()
-
-            del self.connections[name]
+            await connection.controller.disconnect()  # disconnect controller
+            connection.connection_process.clean()  # clean connection process
             logger.info(
                 "%s connection was closed", connection.controller.controller_uuid
             )
+
+        self.connections.clear()
 
     async def get_controller(
         self,
