@@ -1,5 +1,5 @@
 setuptools==65.6.3
 asyncio~=3.4.3
-juju~=2.9.11
+juju~=3.0.4
 confuse~=2.0.0
 PyYaml
