@@ -9,9 +9,10 @@ Provides different ways to run the Juju command:
 import logging
 from argparse import Namespace
 from dataclasses import asdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from juju_spell.commands.base import BaseJujuCommand, Result
+from juju_spell.commands.ping import PING_UNREACHABLE, PingCommand
 from juju_spell.config import Config, Controller
 from juju_spell.connections import connect_manager, get_controller
 
@@ -79,10 +80,33 @@ async def run_batch(
     raise NotImplementedError("running in batches is not yet supported")
 
 
+async def pre_check(
+    config: Config, parsed_args: Namespace
+) -> Tuple[bool, RESULTS_TYPE]:
+    """Pre-check will run ping controller to check all the controller is accessible."""
+    run_type = parsed_args.run_type
+    if run_type == "parallel":
+        result = await run_parallel(config, PingCommand(), parsed_args)
+    elif run_type == "batch":
+        result = await run_batch(config, PingCommand(), parsed_args)
+    else:
+        result = await run_serial(config, PingCommand(), parsed_args)
+    if any([(ping_result["output"] == PING_UNREACHABLE) for ping_result in result]):
+        return False, result
+    return True, result
+
+
 async def run(
     config: Config, command: BaseJujuCommand, parsed_args: Namespace
 ) -> RESULTS_TYPE:
     try:
+        # If pre-check failed, just return pre-check information
+        if parsed_args.pre_check:
+            pre_check_ok, pre_check_result = await pre_check(
+                config=config, parsed_args=parsed_args
+            )
+            if not pre_check_ok:
+                return pre_check_result
         run_type = parsed_args.run_type
         logger.info("running with run_type: %s", run_type)
         if run_type == "parallel":

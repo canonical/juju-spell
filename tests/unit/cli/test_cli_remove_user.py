@@ -27,7 +27,7 @@ def test_fill_parser():
     cmd.fill_parser(parser)
 
     # This one is to check the basic arguments is been added.
-    assert parser.add_argument.call_count == 6
+    assert parser.add_argument.call_count == 7
     parser.add_argument.assert_has_calls(
         [
             mock.call("--user", type=str, help="username to remove", required=True),

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from juju_spell.config import Connection, Controller
+from juju_spell.config import Config, Connection, Controller
 
 TEST_CONFIG = """
 controllers:
@@ -121,15 +121,21 @@ def test_personal_config_path(tmp_path) -> Path:
 
 
 @pytest.fixture
-def test_config():
+def test_config_dict():
     """Return config file as dict."""
     return yaml.safe_load(TEST_COMPLETE_CONFIG)
 
 
 @pytest.fixture
-def controller_config(test_config):
+def test_config(test_config_dict):
+    """Return config file as dict."""
+    return Config(**test_config_dict)
+
+
+@pytest.fixture
+def controller_config(test_config_dict):
     """Return first controller configuration form test config."""
-    controller = test_config["controllers"][0]
+    controller = test_config_dict["controllers"][0]
     controller["connection"] = Connection(controller["connection"])
     return Controller(**controller)
 

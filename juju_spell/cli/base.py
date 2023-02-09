@@ -142,6 +142,15 @@ class BaseJujuCMD(BaseCMD, metaclass=ABCMeta):
             type=parse_comma_separated_str,
             help="model filter",
         )
+        parser.add_argument(
+            "--pre-check",
+            default=False,
+            action="store_true",
+            help=(
+                "This will check all the controller is connectable before the"
+                " execution, otherwise it will be interupted"
+            ),
+        )
 
     def execute(self, parsed_args: argparse.Namespace) -> Any:
         """Execute Juju Commands."""

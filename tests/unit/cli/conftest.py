@@ -48,7 +48,7 @@ class TestJujuWriteCMD(JujuWriteCMD, TestCMD):
 
 
 @pytest.fixture
-def base_cmd(test_config):
+def base_cmd(test_config_dict):
     """Return test CMD inherited from BaseCMD.."""
     return TestCMD(config=None)
 

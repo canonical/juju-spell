@@ -151,10 +151,10 @@ def _update_test_config(
     ],
 )
 def test_validate_config(
-    extra_configuration, exp_connection, exp_controller, test_config
+    extra_configuration, exp_connection, exp_controller, test_config_dict
 ):
     """Test validate config."""
-    test_config = _update_test_config(test_config, extra_configuration)
+    test_config = _update_test_config(test_config_dict, extra_configuration)
 
     config = _validate_config(test_config)
 
@@ -196,9 +196,9 @@ def test_validate_config(
         {"controllers": [{"connection": {"destination": "1.2.3.4", "jumps": [None]}}]},
     ],
 )
-def test_validate_config_failure(extra_configuration, test_config):
+def test_validate_config_failure(extra_configuration, test_config_dict):
     """Test failure of config validation."""
-    test_config = _update_test_config(test_config, extra_configuration)
+    test_config = _update_test_config(test_config_dict, extra_configuration)
 
     with pytest.raises(Exception):
         _validate_config(test_config)

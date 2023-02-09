@@ -7,7 +7,7 @@ from juju_spell.config import _validate_config
 
 
 @pytest.mark.asyncio
-async def test_add_user_execute(test_config):
+async def test_add_user_execute(test_config_dict):
     cmd = AddUserCommand()
 
     mock_conn = AsyncMock()
@@ -17,7 +17,7 @@ async def test_add_user_execute(test_config):
     mock_user.username = "new-user"
     mock_user.display_name = "new-user-display-name"
 
-    controller = _validate_config(test_config).controllers[0]
+    controller = _validate_config(test_config_dict).controllers[0]
     output = await cmd.execute(
         mock_conn,
         **{

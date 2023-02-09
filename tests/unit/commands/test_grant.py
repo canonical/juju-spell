@@ -6,7 +6,7 @@ from juju_spell.commands.grant import GrantCommand
 
 
 @pytest.mark.asyncio
-async def test_grant_execute(test_config):
+async def test_grant_execute():
     cmd = GrantCommand()
 
     mock_conn = AsyncMock()
