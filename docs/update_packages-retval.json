@@ -1,0 +1,34 @@
+[
+  {
+    "output": {
+      "updates": [
+        {
+          "unit": "nova-common",
+          "packages": [
+            {
+              "nova-common": "2:21.2.4-0ubuntu2.1"
+            },
+            {
+              "python3-nova": "2:21.2.4-0ubuntu2.1"
+            }
+          ]
+        },
+        {
+          "unit": "glance",
+          "packages": [
+            {
+              "glance-common": "2:20.2.0-0ubuntu1.1"
+            },
+            {
+              "python3-glance": "2:20.2.0-0ubuntu1.1"
+            }
+          ]
+        }
+      ]
+    },
+    "context": {
+      "name": "controller_config.name",
+      "customer": "controller_config.customer"
+    }
+  }
+]
