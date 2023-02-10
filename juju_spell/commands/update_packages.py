@@ -42,7 +42,7 @@ class Container:
 class UpdatePackages(BaseJujuCommand):
     async def execute(self, controller: Controller, **kwargs):
         default_model = kwargs["controller_config"].model_mapping["default"]
-        updates = self.get_patch_config(kwargs)
+        updates = kwargs["patch"]
         juju_status = await self.get_juju_status(controller, default_model)
         apps_to_update = self.get_apps_to_update(juju_status, updates)
         update_commands = self.get_update_commands(apps_to_update)
@@ -75,12 +75,12 @@ class UpdatePackages(BaseJujuCommand):
         return unit_update
 
     def parse_line(self, line: str):
-        # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
+        # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1
+        # Ubuntu:22.04/jammy-updates [amd64])
         if line.startswith("Inst"):
             _, name, from_version, to_version, *others = line.split(" ")
         elif line.startswith("Unpacking"):
-            # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1
-            # Ubuntu:22.04/jammy-updates [amd64])
+            # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
             _, name, from_version, _, to_version, *others = line.split(" ")
         return name, from_version.strip("()[]"), to_version.strip("()[]")
 
@@ -134,9 +134,3 @@ class UpdatePackages(BaseJujuCommand):
         )
         juju_status = juju_status_map[default_model]
         return juju_status
-
-    def get_patch_config(self, kwargs):
-        update_file = kwargs["patch"]
-        update_config = update_file.read()
-        updates = json.loads(update_config)["updates"]
-        return updates

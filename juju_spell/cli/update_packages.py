@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """JujuSpell juju add user command."""
 import argparse
+import json
 import textwrap
 
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -101,10 +102,17 @@ class UpdatePackages(JujuWriteCMD):
         super().fill_parser(parser=parser)
         parser.add_argument(
             "--patch",
-            type=argparse.FileType("r"),
+            type=get_patch_config,
             help="patch file",
             required=True,
         )
 
     def dry_run(self, parsed_args: argparse.Namespace) -> None:
         ...
+
+
+def get_patch_config(file_path: str):
+    with open(file_path, "r") as file:
+        update_config = file.read()
+        updates = json.loads(update_config)["updates"]
+        return updates
