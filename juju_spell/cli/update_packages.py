@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """JujuSpell juju add user command."""
-import argparse
 import json
 import textwrap
 
@@ -106,9 +105,6 @@ class UpdatePackages(JujuWriteCMD):
             help="patch file",
             required=True,
         )
-
-    def dry_run(self, parsed_args: argparse.Namespace) -> None:
-        ...
 
 
 def get_patch_config(file_path: str):
