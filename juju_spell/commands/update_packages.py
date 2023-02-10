@@ -9,7 +9,6 @@ from juju.model import Model
 from juju.unit import Unit
 
 from juju_spell.commands.base import BaseJujuCommand
-from juju_spell.commands.status import StatusCommand
 
 __all__ = ["UpdatePackages"]
 
@@ -129,8 +128,7 @@ class UpdatePackages(BaseJujuCommand):
         return apps_to_update
 
     async def get_juju_status(self, controller, default_model):
-        juju_status_map = await StatusCommand.execute(
-            self, controller=controller, models=[default_model]
-        )
-        juju_status = juju_status_map[default_model]
-        return juju_status
+        model = await controller.get_model(default_model)
+        status = await model.get_status()
+        await model.disconnect()
+        return status
