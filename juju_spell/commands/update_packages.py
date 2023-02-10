@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import re
-from typing import Dict
+from typing import Dict, List
 
 from juju.action import Action
 from juju.controller import Controller
@@ -30,13 +30,13 @@ class UnitUpdate:
 
 @dataclasses.dataclass
 class Update:
-    units: list[UnitUpdate]
+    units: List[UnitUpdate]
     application: str
 
 
 @dataclasses.dataclass
 class Container:
-    updates: list[Update]
+    updates: List[Update]
 
 
 class UpdatePackages(BaseJujuCommand):
@@ -47,7 +47,7 @@ class UpdatePackages(BaseJujuCommand):
         apps_to_update = self.get_apps_to_update(juju_status, updates)
         update_commands = self.get_update_commands(apps_to_update)
 
-        update_result: list[Update] = []
+        update_result: List[Update] = []
         for update, app, units, command in update_commands:
             single_app: Update = Update(application=app, units=[])
             for unit in units:
