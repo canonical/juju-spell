@@ -15,17 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """JujuSpell juju add user command."""
 import argparse
-import os
 import textwrap
-from typing import Any
 
-import yaml
-from craft_cli import emit
 from craft_cli.dispatcher import _CustomArgumentParser
 
 from juju_spell.cli.base import JujuWriteCMD
 from juju_spell.commands.update_packages import UpdatePackages
-from juju_spell.settings import PERSONAL_CONFIG_PATH
 
 
 class UpdatePackages(JujuWriteCMD):
@@ -111,68 +106,5 @@ class UpdatePackages(JujuWriteCMD):
             required=True,
         )
 
-    @staticmethod
-    def format_output(retval: Any) -> str:
-        """Pretty formatter for output.
-
-        Notes:
-            - The first element of retval, which is a list, is a list of controllers'
-            output. The example:
-
-            retval =
-                [
-                  {
-                    "output": {
-                      "updates": [
-                        {
-                          "unit": "nova-common",
-                          "packages": [
-                            {
-                              "app": "nova-common",
-                              "version": "2:21.2.4-0ubuntu2.1",
-                              "success": "true"
-                            },
-                            {
-                              "app": "python3-nova",
-                              "version": "2:21.2.4-0ubuntu2.1",
-                              "success": "true"
-                            }
-                          ]
-                        },
-                        {
-                          "unit": "glance",
-                          "packages": [
-                            {
-                              "app":"glance-common",
-                              "version":"2:20.2.0-0ubuntu1.1",
-                              "success": "true"
-                            },
-                            {
-                              "app":"python3-glance",
-                              "version": "2:20.2.0-0ubuntu1.1",
-                              "success": "true"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    "context": {
-                      "name": "controller_config.name",
-                      "customer": "controller_config.customer"
-                    }
-                  }
-                ]
-        """
-        emit.debug(f"formatting `{retval}`")
-
-        output = {"controllers": []}
-        for controller_output in retval[0]:
-            output["controllers"].append(controller_output["output"])
-
-        yaml_str = yaml.dump(
-            output, default_flow_style=False, allow_unicode=True, encoding=None
-        )
-        return (
-            f"Please put user information to personal config({PERSONAL_CONFIG_PATH}):"
-            f"{os.linesep}{os.linesep}{yaml_str}{os.linesep}"
-        )
+    def dry_run(self, parsed_args: argparse.Namespace) -> None:
+        ...
