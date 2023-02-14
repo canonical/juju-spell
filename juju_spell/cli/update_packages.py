@@ -14,13 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """JujuSpell juju add user command."""
-import json
+import logging
 import textwrap
 
+import yaml
 from craft_cli.dispatcher import _CustomArgumentParser
 
 from juju_spell.cli.base import JujuWriteCMD
 from juju_spell.commands.update_packages import UpdatePackages
+from juju_spell.exceptions import JujuSpellError
+
+logger = logging.getLogger(__name__)
 
 
 class UpdatePackages(JujuWriteCMD):
@@ -107,8 +111,26 @@ class UpdatePackages(JujuWriteCMD):
         )
 
 
+def load_patch_file(path: str):
+    """Load patch file.
+
+    raises: IsADirectoryError if path is directory
+    raises: FileNotFoundError -> JujuSpellError if fies does not exist
+    raises: PermissionError -> JujuSpellError if user has no permission to path
+    """
+    try:
+        with open(path, "r") as file:
+            source = yaml.safe_load(file)
+            logger.info("load config file from %s path", path)
+            return source
+    except FileNotFoundError as error:
+        logger.error("config file `%s` does not exists", path)
+        raise JujuSpellError(f"config file {path} does not exist") from error
+    except PermissionError as error:
+        logger.error("not enough permission for configuration file `%s`", path)
+        raise JujuSpellError(f"permission denied to read config file {path}") from error
+
+
 def get_patch_config(file_path: str):
-    with open(file_path, "r") as file:
-        update_config = file.read()
-        updates = json.loads(update_config)["updates"]
-        return updates
+    patch = load_patch_file(file_path)
+    return patch["updates"]

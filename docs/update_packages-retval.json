@@ -3,10 +3,10 @@
     "output": {
       "updates": [
         {
-          "application": "nova-common",
+          "application": "nova-compute",
           "units": [
             {
-              "unit": "ubuntu/0",
+              "unit": "nova-compute/0",
               "packages": [
                 {
                   "nova-common": "2:21.2.4-0ubuntu2.1"

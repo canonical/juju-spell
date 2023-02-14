@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from juju.action import Action
 from juju.controller import Controller
@@ -35,34 +35,39 @@ class Update:
 
 @dataclasses.dataclass
 class Container:
+    model: str
     updates: List[Update]
 
 
 class UpdatePackages(BaseJujuCommand):
-    async def execute(self, controller: Controller, **kwargs):
-        default_model = kwargs["controller_config"].model_mapping["default"]
-        updates = kwargs["patch"]
-        juju_status = await self.get_juju_status(controller, default_model)
-        apps_to_update = self.get_apps_to_update(juju_status, updates)
-        update_commands = self.get_update_commands(apps_to_update)
+    async def execute(
+        self, controller: Controller, models: Optional[List[str]] = None, **kwargs
+    ):
+        result_list: List[Container] = []
+        async for name, model in self.get_filtered_models(controller, models):
+            default_model = kwargs["controller_config"].model_mapping["default"]
+            updates = kwargs["patch"]
+            apps_to_update = self.get_apps_to_update(model, updates)
+            update_commands = self.get_update_commands(apps_to_update)
 
-        update_result: List[Update] = []
-        for update, app, units, command in update_commands:
-            single_app: Update = Update(application=app, units=[])
-            for unit in units:
-                _, result = await self.run_on_unit(
-                    controller=controller,
-                    model=default_model,
-                    command=command,
-                    unit=unit,
-                )
-                unit_update: UnitUpdate = self.parse_result(unit, result)
-                single_app.units.append(unit_update)
-            update_result.append(single_app)
+            update_result: List[Update] = []
+            for update, app, units, command in update_commands:
+                single_app: Update = Update(application=app, units=[])
+                for unit in units:
+                    _, result = await self.run_on_unit(
+                        controller=controller,
+                        model=default_model,
+                        command=command,
+                        unit=unit,
+                    )
+                    unit_update: UnitUpdate = self.parse_result(unit, result)
+                    single_app.units.append(unit_update)
+                update_result.append(single_app)
 
-        mylist = [dataclasses.asdict(result) for result in update_result]
-        print(json.dumps(mylist))
-        return Container(updates=update_result)
+            mylist = [dataclasses.asdict(result) for result in update_result]
+            print(json.dumps(mylist))
+            result_list.append(Container(updates=update_result))
+        return result_list
 
     def parse_result(self, unit: str, result: str):
         lines = result.splitlines()
@@ -119,7 +124,15 @@ class UpdatePackages(BaseJujuCommand):
         package_list = " ".join(app_list)
         return package_list
 
-    def get_apps_to_update(self, juju_status, updates):
+    def get_apps_to_update(self, model: Model, updates):
+        apps_to_update = []
+        for update in updates:
+            for app, app_status in model.applications.items():
+                if re.match(update["application"], app):
+                    apps_to_update.append((update, app, list(app_status.units.keys())))
+        return apps_to_update
+
+    def get_apps_to_update2(self, juju_status, updates):
         apps_to_update = []
         for update in updates:
             for app, app_status in juju_status.applications.items():
