@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 import yaml
-from confuse import ConfigTypeError, ConfigView
+from confuse import ConfigTypeError, ConfigView, MappingTemplate
 
 from juju_spell.config import (
     API_ENDPOINT_REGEX,
@@ -14,10 +14,12 @@ from juju_spell.config import (
     UUID_REGEX,
     Config,
     String,
+    _apply_default,
     _validate_config,
     load_config,
     load_config_file,
     merge_configs,
+    validate_source_match_template,
 )
 from juju_spell.exceptions import JujuSpellError
 from tests.unit.conftest import TEST_CONFIG, TEST_PERSONAL_CONFIG
@@ -272,6 +274,16 @@ def test_validate_config_failure(extra_configuration, test_config_dict):
                 ],
             },
         ),
+        (
+            {"default": {"controller": {"name": "abc"}}},
+            {"default": {"controller": {"name": "bcd"}}},
+            {"default": {"controller": {"name": "bcd"}}},
+        ),
+        (
+            {"default": {"controller": {"name": "abc", "user": "admin"}}},
+            {"default": {"controller": {"name": "bcd"}}},
+            {"default": {"controller": {"name": "bcd", "user": "admin"}}},
+        ),
     ],
 )
 def test_merge_configs(config, personal_config, result):
@@ -330,3 +342,74 @@ def test_load_config(
     mock_merge_configs.assert_called_once_with(exp_config, exp_config)
     mock_validate_config.assert_called_once_with(mock_merge_configs.return_value)
     assert config == mock_validate_config.return_value
+
+
+@pytest.mark.parametrize(
+    "source,exp",
+    [
+        # List of dict, merge
+        (
+            {"default": {"key_a": {"va": 1}}, "key_as": [{"vb": 2}]},
+            {"key_as": [{"va": 1, "vb": 2}]},
+        ),
+        # List of dict, not overwrite
+        (
+            {"default": {"key_a": {"va": 1}}, "key_as": [{"va": 2, "vb": 2}]},
+            {"key_as": [{"va": 2, "vb": 2}]},
+        ),
+        # List of dict, make sure apply default by key
+        (
+            {
+                "default": {"key_a": {"va": 1}, "key_b": {"vb": 3}},
+                "key_as": [{"va": 2, "vb": 2}],
+            },
+            {"key_as": [{"va": 2, "vb": 2}]},
+        ),
+        # List of dict, list of dict apply
+        (
+            {
+                "default": {"key_a": {"va": 1}, "key_b": {"vb": 3}},
+                "key_as": [{}, {}],
+                "key_bs": [{}, {}],
+            },
+            {"key_as": [{"va": 1}, {"va": 1}], "key_bs": [{"vb": 3}, {"vb": 3}]},
+        ),
+        # List of nested dict
+        (
+            {
+                "default": {"key_a": {"va": 1, "vb": {"vc": 1}}},
+                "key_as": [{"vb": {"vd": 2}}],
+            },
+            {
+                "key_as": [{"va": 1, "vb": {"vc": 1, "vd": 2}}],
+            },
+        ),
+        # Simple Dict
+        (
+            {
+                "default": {"key_a": {"va": 1}},
+                "key_as": {},
+            },
+            {"key_as": {"va": 1}},
+        ),
+    ],
+)
+@mock.patch("juju_spell.config.validate_source_match_template")
+def test__apply_default(_, source, exp):
+    result = _apply_default(source)
+    assert result == exp
+
+
+@pytest.mark.parametrize(
+    "template, source, exp_error",
+    [
+        (MappingTemplate({"a": str}), {"a": "a"}, None),
+        (MappingTemplate({"a": str}), {"a": 1}, JujuSpellError),
+    ],
+)
+def test_validate_source_match_template(template, source, exp_error):
+    if exp_error:
+        with pytest.raises(exp_error):
+            validate_source_match_template(source, template)
+    else:
+        validate_source_match_template(source, template)

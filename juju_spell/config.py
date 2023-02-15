@@ -101,31 +101,33 @@ class ConnectionDict(confuse.MappingTemplate):
         return Connection(**output)
 
 
-JUJUSPELL_CONFIG_TEMPLATE = confuse.MappingTemplate(
+DEFAULT_KEY = "default"
+JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
     {
-        "connection": confuse.MappingTemplate(
+        "uuid": String(UUID_REGEX, "Invalid uuid definition"),
+        "name": str,
+        "customer": str,
+        "owner": str,
+        "description": confuse.Optional(str),
+        "tags": confuse.Optional(confuse.Sequence(str)),
+        "risk": confuse.Choice(range(1, 6), default=5),
+        "endpoint": String(API_ENDPOINT_REGEX, "Invalid api endpoint definition"),
+        "ca_cert": String(CA_CERT_REGEX, "Invalid ca-cert format"),
+        "user": str,
+        "password": str,
+        "model_mapping": confuse.MappingTemplate(
             {
-                "port-range": confuse.Optional(
-                    PortRange(
-                        PORT_RANGE,
-                        "Invalid port-range definition",
-                        default=DEFAULT_PORT_RANGE,
-                    )
-                ),
+                "lma": confuse.Optional(str),
+                "default": confuse.Optional(str),
             }
         ),
-        "controllers": confuse.Sequence(
-            ControllerDict(
+        "connection": confuse.Optional(
+            ConnectionDict(
                 {
-                    "uuid": String(UUID_REGEX, "Invalid uuid definition"),
-                    "name": str,
-                    "customer": str,
-                    "owner": str,
-                    "description": confuse.Optional(str),
-                    "tags": confuse.Optional(confuse.Sequence(str)),
-                    "risk": confuse.Choice(range(1, 6), default=5),
-                    "endpoint": String(
-                        API_ENDPOINT_REGEX, "Invalid api endpoint definition"
+                    "subnets": confuse.Optional(
+                        confuse.Sequence(
+                            String(SUBNET_REGEX, "Invalid subnet definition")
+                        )
                     ),
                     "ca_cert": String(CA_CERT_REGEX, "Invalid ca-cert format"),
                     "user": str,
@@ -135,33 +137,49 @@ JUJUSPELL_CONFIG_TEMPLATE = confuse.MappingTemplate(
                             "lma": confuse.Optional(confuse.Sequence(str)),
                             "default": confuse.Optional(confuse.Sequence(str)),
                         }
+                    "destination": String(
+                        DESTINATION_REGEX, "Invalid destination definition"
                     ),
-                    "connection": confuse.Optional(
-                        ConnectionDict(
-                            {
-                                "subnets": confuse.Optional(
-                                    confuse.Sequence(
-                                        String(
-                                            SUBNET_REGEX, "Invalid subnet definition"
-                                        )
-                                    )
-                                ),
-                                "destination": String(
-                                    DESTINATION_REGEX, "Invalid destination definition"
-                                ),
-                                "jumps": confuse.Optional(
-                                    confuse.Sequence(
-                                        String(
-                                            DESTINATION_REGEX, "Invalid jump definition"
-                                        )
-                                    )
-                                ),
-                            }
+                    "jumps": confuse.Optional(
+                        confuse.Sequence(
+                            String(DESTINATION_REGEX, "Invalid jump definition")
                         )
                     ),
                 }
             )
         ),
+    }
+)
+
+JUJUSPELL_CONECTION_TEMPLATE = confuse.MappingTemplate(
+    {
+        "port-range": confuse.Optional(
+            PortRange(
+                PORT_RANGE,
+                "Invalid port-range definition",
+                default=DEFAULT_PORT_RANGE,
+            )
+        ),
+    }
+)
+
+
+JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
+    {
+        DEFAULT_KEY: confuse.MappingTemplate(
+            {
+                "controller": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
+            }
+        ),
+        "connection": confuse.Optional(JUJUSPELL_CONECTION_TEMPLATE),
+        "controllers": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
+    }
+)
+
+JUJUSPELL_CONFIG_TEMPLATE = confuse.MappingTemplate(
+    {
+        "connection": JUJUSPELL_CONECTION_TEMPLATE,
+        "controllers": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
     }
 )
 
@@ -199,28 +217,105 @@ class Config:
     connection: Optional[Dict[str, Any]] = None
 
 
-def _validate_config(source: Dict[str, Any]) -> Config:
-    """Validate config.
-
-    Using confuse library to validate config.
-    """
+def validate_source_match_template(
+    source: Dict[str, Any],
+    template: confuse.MappingTemplate,
+) -> Config:
+    """Return valid config if source match template, else raise ConfigError."""
     try:
         _config = RootView([source])
-        valid_config = _config.get(JUJUSPELL_CONFIG_TEMPLATE)
-        logger.info("config was validated")
-        config = Config(**valid_config)
-        return config
+        valid_config = _config.get(template)
+        return valid_config
     except ConfigError as error:
         logger.error("configuration file validation failed with error: %s", error)
         raise JujuSpellError("configuration file validation failed") from error
 
 
+def _validate_config(source: Dict[str, Any]) -> Config:
+    """Validate config.
+
+    Using confuse library to validate config.
+    """
+    valid_config = validate_source_match_template(source, JUJUSPELL_CONFIG_TEMPLATE)
+    return Config(**valid_config)
+
+
+def _apply_default_dict(source: Dict[Any, Any], default: Dict[Any, Any]):
+    new_dict = source.copy()
+    for k in default:
+        target_val = source.get(k, default.get(k))
+        if isinstance(target_val, dict):
+            new_dict[k] = _apply_default_dict(target_val, default[k])
+        elif isinstance(target_val, list):
+            new_dict[k] = _apply_default_list(target_val, default[k])
+        else:
+            new_dict[k] = target_val
+    return new_dict
+
+
+def _apply_default_list(source: List[Any], default):
+    new_list = []
+    for value in source:
+        if isinstance(value, dict) and isinstance(default, dict):
+            new_list.append(_apply_default_dict(value, default))
+        else:
+            new_list.append(default)
+    return new_list
+
+
+def _apply_default(source: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply default value to every elements in list.
+
+    If the config look like this:
+
+    ```yaml
+    default:
+        controller: {"password": "pwd"}
+    controllers:
+      - name: abc
+        ...
+      - name: cbd
+        ...
+    ```
+    The values in default.controller will be apply to every elements in controllers
+    if the value is not exists.
+    """
+    validate_source_match_template(source, JUJUSPELL_DEFAULT_CONFIG_TEMPLATE)
+
+    default = source.pop(DEFAULT_KEY, None)
+    if default is None:
+        return source
+
+    for key, value in default.items():
+        target_key = key + "s"
+        # List of dict
+        if isinstance(source.get(target_key), list):
+            source[target_key] = _apply_default_list(source[target_key], value)
+        if isinstance(source.get(target_key), dict):
+            source[target_key] = _apply_default_dict(source[target_key], value)
+    return source
+
+
 def merge_configs(config: Dict, personal_config: Dict):
-    # Merge personal and global config
-    config["controllers"] = merge_list_of_dict_by_key(
-        key="uuid",
-        lists=[config["controllers"], personal_config["controllers"]],
-    )
+    """Merge personal and global config."""
+    # Merge default
+    config_defualt = config.get(DEFAULT_KEY, {})
+    personal_defualt = personal_config.get(DEFAULT_KEY, {})
+
+    # Get set of all keys in default
+    default_keys = set().union(*[config_defualt, personal_defualt])
+    for key in default_keys:
+        config[DEFAULT_KEY][key] = {
+            **config_defualt.get(key, {}),
+            **personal_defualt.get(key, {}),
+        }
+
+    # Merge controllers by unique key uuid
+    if config.get("controllers") and personal_config.get("controllers"):
+        config["controllers"] = merge_list_of_dict_by_key(
+            key="uuid",
+            lists=[config["controllers"], personal_config["controllers"]],
+        )
     return config
 
 
@@ -242,6 +337,9 @@ def load_config_file(path):
     except PermissionError as error:
         logger.error("not enough permission for configuration file `%s`", path)
         raise JujuSpellError(f"permission denied to read config file {path}") from error
+    except ConfigError as error:
+        logger.error("configuration file validation failed with error: %s", error)
+        raise JujuSpellError("configuration file validation failed") from error
 
 
 def load_config(
@@ -254,6 +352,7 @@ def load_config(
         # Merge personal and default config
         source = merge_configs(source, personal_source)
 
+    source = _apply_default(source)
     config = _validate_config(source)
     return config
 

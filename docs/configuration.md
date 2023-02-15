@@ -21,6 +21,9 @@ The config for JujuSpell continues list of controllers where each controller hav
 
 Example:
 ```yaml
+default:
+  controller:
+    user: admin
 controllers:
   - name: example_controller
     customer: example_customer
@@ -32,7 +35,7 @@ controllers:
     ca_cert: |
         -----BEGIN CERTIFICATE-----
         -----END CERTIFICATE-----
-    username: admin
+    user: admin
     password: pass1234
     model_mapping:
       lma: monitoring
@@ -45,6 +48,10 @@ controllers:
       jumps:  # optional
         - bastion
 ```
+
+## Default config
+
+The key inside *default* will provide the default value to `{key}s` if the value is not exists.
 
 ## Generate configuration
 
