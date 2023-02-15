@@ -158,7 +158,6 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
     async def test_connect(self, mock_controller_direct_connection, mock_controller):
         """Test connection with direct access."""
         config = self.controller_config_2
-        port_range = range(17071, 17170)
         exp_endpoint = "localhost:17071"
 
         mocked_controller = mock_controller.return_value = AsyncMock()
@@ -166,8 +165,8 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
             "juju_spell.connections.manager.get_connection"
         ) as mock_get_connection:
             mock_get_connection.return_value = exp_endpoint, MagicMock()
-            controller = await self.connect_manager._connect(config, port_range)
-            mock_get_connection.assert_called_once_with(config, port_range, False)
+            controller = await self.connect_manager._connect(config)
+            mock_get_connection.assert_called_once_with(config, False)
 
         assert controller == mocked_controller
         mock_controller_direct_connection.assert_called_once_with(
@@ -213,7 +212,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
 
         controller = await self.connect_manager.get_controller(config, reconnect=False)
 
-        mock_connect.assert_called_once_with(config, range(17071, 17170), False)
+        mock_connect.assert_called_once_with(config, False)
         assert controller == mock_connect.return_value
 
     async def test_get_controller_reconnect(self):
@@ -226,7 +225,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
         controller = await self.connect_manager.get_controller(config, reconnect=True)
 
         mocked_connection.controller.disconnect.assert_called_once()
-        mock_connect.assert_called_once_with(config, range(17071, 17170), False)
+        mock_connect.assert_called_once_with(config, False)
         assert controller == mock_connect.return_value
 
     async def test_get_controller_auto_reconnect(self):
@@ -240,7 +239,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
 
         controller = await self.connect_manager.get_controller(config, reconnect=False)
 
-        mock_connect.assert_called_once_with(config, range(17071, 17170), False)
+        mock_connect.assert_called_once_with(config, False)
         assert controller == mock_connect.return_value
 
     async def test_get_controller_existing_controller(self):

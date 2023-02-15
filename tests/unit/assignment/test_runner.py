@@ -131,9 +131,7 @@ async def test_run_serial(mock_get_result, mock_get_controller, steps, parsed_ar
     assert result == exp_result
 
     for controller_config, pre_check, dry_run, run_output, exp_output in steps:
-        mock_get_controller.assert_has_awaits(
-            [mock.call(controller_config, config.connection.get.return_value)]
-        )
+        mock_get_controller.assert_has_awaits([mock.call(controller_config)])
 
         command_kwargs = vars(parsed_args)
         command_kwargs["controller_config"] = controller_config

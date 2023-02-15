@@ -14,6 +14,7 @@ from juju_spell.config import (
     SUBNET_REGEX,
     UUID_REGEX,
     Config,
+    Connection,
     String,
     _apply_default,
     _validate_config,
@@ -59,15 +60,8 @@ def _update_test_config(
 ) -> Dict[str, Any]:
     """Update test config."""
     updated_config = config.copy()
-    extra_connection_configuration = extra_configuration.get("connection", {})
     extra_controller_configuration = extra_configuration.get("controllers", [])
     extra_default_configuration = extra_configuration.get("default", {})
-
-    for key, value in extra_connection_configuration.items():
-        if "connection" not in updated_config:
-            updated_config["connection"] = {}
-
-        updated_config["connection"][key] = value
 
     for i, controller in enumerate(extra_controller_configuration):
         if "controllers" not in updated_config:
@@ -86,11 +80,10 @@ def _update_test_config(
 
 
 @pytest.mark.parametrize(
-    "extra_configuration, exp_connection, exp_controller",
+    "extra_configuration, exp_controller",
     [
         (
             {},  # extra configuration
-            {},  # connection
             [
                 {
                     "name": "example_controller",
@@ -104,13 +97,25 @@ def _update_test_config(
         ),
         # test optional configuration option
         (
-            {},  # extra configuration
-            {"port-range": range(17071, 17170)},  # connection
+            {
+                "controllers": [
+                    {
+                        "connection": {
+                            "destination": "ubuntu@10.78.137.126",
+                            "port_range": "17071:17170",
+                        }
+                    }
+                ]
+            },  # extra configuration
             [
                 {
                     "description": "some nice notes",
                     "tags": ["test"],
                     "risk": 3,
+                    "connection": Connection(
+                        destination="ubuntu@10.78.137.126",
+                        port_range=range(17071, 17170),
+                    ),
                 },  # controller 0
                 {
                     "description": None,
@@ -121,8 +126,7 @@ def _update_test_config(
             ],
         ),
         (
-            {"connection": {"port-range": "18000:1900"}},  # extra configuration
-            {"port-range": range(18000, 1900)},  # connection
+            {"connection": {"port_range": "18000:1900"}},  # extra configuration
             [
                 {
                     "name": "example_controller",
@@ -146,7 +150,6 @@ def _update_test_config(
                     }
                 ]
             },
-            {},  # connection
             [
                 {
                     "name": "example_controller",
@@ -165,19 +168,13 @@ def _update_test_config(
         # test special destination
     ],
 )
-def test_validate_config(
-    extra_configuration, exp_connection, exp_controller, test_config_dict
-):
+def test_validate_config(extra_configuration, exp_controller, test_config_dict):
     """Test validate config."""
     test_config = _update_test_config(test_config_dict, extra_configuration)
 
     config = _validate_config(test_config)
 
     assert isinstance(config, Config)
-
-    # check connections
-    for key, value in exp_connection.items():
-        assert getattr(config.connection, key) == value
 
     # check controllers
     for i, controller in enumerate(exp_controller):
@@ -188,8 +185,8 @@ def test_validate_config(
 @pytest.mark.parametrize(
     "extra_configuration",
     [
-        {"connection": {"port-range": "17070"}},
-        {"connection": {"port-range": "1:100000"}},
+        {"controllers": [{"connection": {"port_range": "17070"}}]},
+        {"controllers": [{"connection": {"port_range": "1:100000"}}]},
         {"controllers": [{"name": 1}]},
         {"controllers": [{"customer": None}]},
         {"controllers": [{"owner": None}]},

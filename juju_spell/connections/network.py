@@ -6,7 +6,6 @@ import subprocess
 from typing import List, Optional, Tuple
 
 from juju_spell.config import Controller
-from juju_spell.settings import DEFAULT_PORT_RANGE
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +211,6 @@ class SshuttleSubprocess(BaseSubprocessConnection):
 
 def get_connection(
     controller_config: Controller,
-    port_range: range = DEFAULT_PORT_RANGE,
     sshuttle: bool = False,
 ) -> Tuple[str, BaseConnection]:
     """Get connection."""
@@ -220,7 +218,7 @@ def get_connection(
     process = EmptyConnection()  # controller has direct access
 
     if controller_config.connection and not sshuttle:
-        port = get_free_tcp_port(port_range)
+        port = get_free_tcp_port(controller_config.connection.port_range)
         controller_endpoint = f"localhost:{port}"
         process = SshPortForwardSubprocess(
             controller_endpoint,

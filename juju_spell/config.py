@@ -77,7 +77,7 @@ class PortRange(String):
     """A template specific for port range."""
 
     def convert(self, value: Any, view: confuse.ConfigView) -> range:
-        """Check and convert port-range string to tuple."""
+        """Check and convert port_range string to tuple."""
         value = super().convert(value, view)
         start_port, end_port = value.split(":")
         return range(int(start_port), int(end_port))
@@ -137,23 +137,18 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
                             String(DESTINATION_REGEX, "Invalid jump definition")
                         )
                     ),
+                    "port_range": confuse.Optional(
+                        PortRange(
+                            PORT_RANGE,
+                            "Invalid port_range definition",
+                        )
+                    ),
                 }
             )
         ),
     }
 )
 
-JUJUSPELL_CONECTION_TEMPLATE = confuse.MappingTemplate(
-    {
-        "port-range": confuse.Optional(
-            PortRange(
-                PORT_RANGE,
-                "Invalid port-range definition",
-                default=DEFAULT_PORT_RANGE,
-            )
-        ),
-    }
-)
 
 JUJU_DEFAULT_CONTROLLER_DICT = {
     "uuid": confuse.Optional(String(UUID_REGEX, "Invalid uuid definition")),
@@ -205,11 +200,17 @@ JUJU_DEFAULT_CONTROLLER_DICT = {
                         )
                     )
                 ),
+                "port_range": confuse.Optional(
+                    PortRange(
+                        PORT_RANGE,
+                        "Invalid port_range definition",
+                    ),
+                    default=DEFAULT_PORT_RANGE,
+                ),
             }
         )
     ),
 }
-
 
 JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
     {
@@ -221,7 +222,6 @@ JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
                 ),
             }
         ),
-        "connection": confuse.Optional(JUJUSPELL_CONECTION_TEMPLATE),
         "controllers": confuse.Optional(
             confuse.Sequence(
                 # uuid and name are required, else is optional
@@ -233,7 +233,6 @@ JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
 
 JUJUSPELL_CONFIG_TEMPLATE = confuse.MappingTemplate(
     {
-        "connection": JUJUSPELL_CONECTION_TEMPLATE,
         "controllers": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
     }
 )
@@ -244,6 +243,7 @@ class Connection:
     destination: str
     jumps: Optional[List[str]] = None
     subnets: Optional[List[str]] = None
+    port_range: Optional[range] = DEFAULT_PORT_RANGE
 
 
 @dataclasses.dataclass
@@ -269,7 +269,6 @@ class Controller:
 @dataclasses.dataclass
 class Config:
     controllers: List[Controller]
-    connection: Optional[Dict[str, Any]] = None
 
 
 def validate_source_match_template(

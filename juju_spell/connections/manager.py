@@ -12,7 +12,6 @@ from juju_spell.config import Controller
 from juju_spell.connections.network import BaseConnection, get_connection
 from juju_spell.settings import (
     DEFAULT_CONNECTIN_TIMEOUT,
-    DEFAULT_PORT_RANGE,
     DEFAULT_RETRY_BACKOFF,
     DEFUALT_MAX_FRAME_SIZE,
 )
@@ -129,13 +128,13 @@ class ConnectManager(object):
         return self._connections
 
     async def _connect(
-        self, controller_config: Controller, port_range: range, sshuttle: bool = False
+        self, controller_config: Controller, sshuttle: bool = False
     ) -> juju.Controller:
         """Prepare connection to Controller and return it."""
         logger.info("getting a new connection to controller %s", controller_config.name)
         controller = juju.Controller(max_frame_size=DEFUALT_MAX_FRAME_SIZE)
         controller_endpoint, connection_process = get_connection(
-            controller_config, port_range, sshuttle
+            controller_config, sshuttle
         )
         connection_process.connect()
         self.connections[controller_config.name] = Connection(
@@ -168,7 +167,6 @@ class ConnectManager(object):
     async def get_controller(
         self,
         controller_config: Controller,
-        port_range: range = DEFAULT_PORT_RANGE,
         sshuttle: bool = False,
         reconnect: bool = False,
     ) -> juju.Controller:
@@ -186,4 +184,4 @@ class ConnectManager(object):
         elif connection and reconnect:
             await connection.controller.disconnect()
 
-        return await self._connect(controller_config, port_range, sshuttle)
+        return await self._connect(controller_config, sshuttle)
