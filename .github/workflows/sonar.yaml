@@ -107,3 +107,5 @@ jobs:
             -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }}
             -Dsonar.branch.name=${{ github.event.workflow_run.head_branch }}
             -Dproject.settings=sonar-project.properties
+            -Dsonar.pullrequest.github.endpoint=https://api.github.com/
+            -Dsonar.pullrequest.github.repository=canonical/juju-spell
