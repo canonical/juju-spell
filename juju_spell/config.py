@@ -117,8 +117,8 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
         "password": str,
         "model_mapping": confuse.MappingTemplate(
             {
-                "lma": confuse.Optional(str),
-                "default": confuse.Optional(str),
+                "lma": confuse.Optional(confuse.Sequence(str)),
+                "default": confuse.Optional(confuse.Sequence(str)),
             }
         ),
         "connection": confuse.Optional(
@@ -129,14 +129,6 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
                             String(SUBNET_REGEX, "Invalid subnet definition")
                         )
                     ),
-                    "ca_cert": String(CA_CERT_REGEX, "Invalid ca-cert format"),
-                    "user": str,
-                    "password": str,
-                    "model_mapping": confuse.MappingTemplate(
-                        {
-                            "lma": confuse.Optional(confuse.Sequence(str)),
-                            "default": confuse.Optional(confuse.Sequence(str)),
-                        }
                     "destination": String(
                         DESTINATION_REGEX, "Invalid destination definition"
                     ),
@@ -163,16 +155,79 @@ JUJUSPELL_CONECTION_TEMPLATE = confuse.MappingTemplate(
     }
 )
 
+JUJU_DEFAULT_CONTROLLER_DICT = {
+    "uuid": confuse.Optional(String(UUID_REGEX, "Invalid uuid definition")),
+    "name": confuse.Optional(str),
+    "customer": confuse.Optional(str),
+    "owner": confuse.Optional(str),
+    "description": confuse.Optional(str),
+    "tags": confuse.Optional(confuse.Sequence(str)),
+    "risk": confuse.Optional(confuse.Choice(range(1, 6), default=5)),
+    "endpoint": confuse.Optional(
+        String(
+            API_ENDPOINT_REGEX,
+            "Invalid api endpoint definition",
+        )
+    ),
+    "ca_cert": confuse.Optional(String(CA_CERT_REGEX, "Invalid ca-cert format")),
+    "user": confuse.Optional(str),
+    "password": confuse.Optional(str),
+    "model_mapping": confuse.Optional(
+        confuse.MappingTemplate(
+            {
+                "lma": confuse.Optional(confuse.Sequence(str)),
+                "default": confuse.Optional(confuse.Sequence(str)),
+            }
+        )
+    ),
+    "connection": confuse.Optional(
+        ConnectionDict(
+            {
+                "subnets": confuse.Optional(
+                    confuse.Sequence(
+                        String(
+                            SUBNET_REGEX,
+                            "Invalid subnet definition",
+                        )
+                    )
+                ),
+                "destination": confuse.Optional(
+                    String(
+                        DESTINATION_REGEX,
+                        "Invalid destination definition",
+                    )
+                ),
+                "jumps": confuse.Optional(
+                    confuse.Sequence(
+                        String(
+                            DESTINATION_REGEX,
+                            "Invalid jump definition",
+                        )
+                    )
+                ),
+            }
+        )
+    ),
+}
+
 
 JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
     {
         DEFAULT_KEY: confuse.MappingTemplate(
             {
-                "controller": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
+                "controller": confuse.Optional(
+                    # Should not have uuid and name
+                    confuse.MappingTemplate(JUJU_DEFAULT_CONTROLLER_DICT)
+                ),
             }
         ),
         "connection": confuse.Optional(JUJUSPELL_CONECTION_TEMPLATE),
-        "controllers": confuse.Sequence(JUJUSPELL_CONTROLLER_TEMPLATE),
+        "controllers": confuse.Optional(
+            confuse.Sequence(
+                # uuid and name are required, else is optional
+                confuse.MappingTemplate(JUJU_DEFAULT_CONTROLLER_DICT)
+            )
+        ),
     }
 )
 

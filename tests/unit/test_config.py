@@ -10,6 +10,7 @@ from confuse import ConfigTypeError, ConfigView, MappingTemplate
 from juju_spell.config import (
     API_ENDPOINT_REGEX,
     DESTINATION_REGEX,
+    JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
     SUBNET_REGEX,
     UUID_REGEX,
     Config,
@@ -60,6 +61,7 @@ def _update_test_config(
     updated_config = config.copy()
     extra_connection_configuration = extra_configuration.get("connection", {})
     extra_controller_configuration = extra_configuration.get("controllers", [])
+    extra_default_configuration = extra_configuration.get("default", {})
 
     for key, value in extra_connection_configuration.items():
         if "connection" not in updated_config:
@@ -73,6 +75,12 @@ def _update_test_config(
 
         for key, value in controller.items():
             updated_config["controllers"][i][key] = value
+
+    if extra_default_configuration:
+        updated_config["default"] = {
+            **config.get("default", {}),
+            **extra_default_configuration,
+        }
 
     return updated_config
 
@@ -209,6 +217,41 @@ def test_validate_config_failure(extra_configuration, test_config_dict):
 
     with pytest.raises(Exception):
         _validate_config(test_config)
+
+
+@pytest.mark.parametrize(
+    "extra_configuration, template, exp_error",
+    [
+        # Empty default
+        (
+            {},
+            JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
+            False,
+        ),
+        # controller default
+        (
+            {"default": {"controller": {"customer": "abc"}}},
+            JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
+            False,
+        ),
+        # Wrong type
+        (
+            {"default": {"controller": {"customer": 123}}},
+            JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
+            True,
+        ),
+    ],
+)
+def test_config_match_template(
+    extra_configuration, template, exp_error, test_config_dict
+):
+    """Test if config match template."""
+    test_config = _update_test_config(test_config_dict, extra_configuration)
+    if exp_error:
+        with pytest.raises(JujuSpellError):
+            validate_source_match_template(test_config, template)
+    else:
+        validate_source_match_template(test_config, template)
 
 
 @pytest.mark.parametrize(
