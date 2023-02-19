@@ -1,147 +1,179 @@
+import copy
 import dataclasses
-import json
 import re
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from juju.action import Action
 from juju.controller import Controller
 from juju.model import Model
-from juju.unit import Unit
 
-from juju_spell.commands.base import BaseJujuCommand
+from juju_spell.commands.base import BaseJujuCommand, Result
 
 __all__ = ["UpdatePackages"]
 
 UPDATE_TEMPLATE = (
     "sudo apt-get update ; sudo apt-get "
     "--option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef "
-    "{install} --upgrade -y {packages}"
+    "{install} --upgrade -y {packages} "
 )
 
 TIMEOUT_TO_RUN_COMMAND_SECONDS = 600
 
 
 @dataclasses.dataclass
-class UnitUpdate:
-    unit: str
-    packages: Dict[str, str]
+class PackageUpdateResult:
+    package: str
+    from_version: str
+    to_version: str
 
 
 @dataclasses.dataclass
-class Update:
-    units: List[UnitUpdate]
+class UnitUpdateResult:
+    unit: str
+    command: str
+    raw_output: Optional[str] = ""
+    packages: Optional[List[PackageUpdateResult]] = None
+    success: bool = False
+
+
+@dataclasses.dataclass
+class UpdateResult:
+    units: List[UnitUpdateResult]
     application: str
 
 
 @dataclasses.dataclass
-class Container:
-    model: str
-    updates: List[Update]
+class PackageToUpdate:
+    package: str
+    version: str
+
+
+@dataclasses.dataclass
+class Application:
+    name_expr: str
+    dist_upgrade: bool
+    packages_to_update: List[PackageToUpdate]
+    results: List[UpdateResult]  # output
+
+
+@dataclasses.dataclass
+class Updates:
+    applications: List[Application]
 
 
 class UpdatePackages(BaseJujuCommand):
     async def execute(
         self, controller: Controller, models: Optional[List[str]] = None, **kwargs
-    ):
-        result_list: List[Container] = []
-        async for name, model in self.get_filtered_models(controller, models):
-            default_model = kwargs["controller_config"].model_mapping["default"]
-            updates = kwargs["patch"]
-            apps_to_update = self.get_apps_to_update(model, updates)
-            update_commands = self.get_update_commands(apps_to_update)
+    ) -> Optional[Result]:
+        """Run update."""
+        return await self.make_updates(controller=controller, models=models, **kwargs)
 
-            update_result: List[Update] = []
-            for update, app, units, command in update_commands:
-                single_app: Update = Update(application=app, units=[])
-                for unit in units:
-                    _, result = await self.run_on_unit(
-                        controller=controller,
-                        model=default_model,
-                        command=command,
-                        unit=unit,
+    async def dry_run(
+        self, controller: Controller, models: Optional[List[str]] = None, **kwargs
+    ) -> Optional[Result]:
+        """Run update with --dry-run flag."""
+        return await self.make_updates(controller=controller, models=models, **kwargs)
+
+    async def make_updates(
+        self,
+        controller: Controller,
+        models: Optional[List[str]],
+        dry_run: bool,
+        **kwargs
+    ) -> Optional[Result]:
+        updates: Updates = kwargs["patch"]
+        output = {}
+        async for name, model in self.get_filtered_models(
+            controller=controller,
+            model_mappings=kwargs["controller_config"].model_mapping,
+            models=models,
+        ):
+            model_result: Updates = copy.copy(updates)
+            self.set_apps_to_update(model, model_result, dry_run=dry_run)
+            await self.run_updates_on_model(model, model_result)
+
+            output[name] = model_result
+        return Result(output=output, success=True, error=None)
+
+    async def run_updates_on_model(self, model: Model, updates: Updates):
+        """Run updates on model.
+
+        Runs the command on unit and parses the result and assigns it to each unit.
+        """
+        for app in updates.applications:
+            for result in app.results:
+                for unit in result.units:
+                    juju_unit = model.units[unit.unit]
+                    action: Action = await juju_unit.run(
+                        command=unit.command, timeout=TIMEOUT_TO_RUN_COMMAND_SECONDS
                     )
-                    unit_update: UnitUpdate = self.parse_result(unit, result)
-                    single_app.units.append(unit_update)
-                update_result.append(single_app)
+                    result = action.data["results"]["Stdout"]
+                    updated_packages = self.parse_result(result)
+                    unit.packages = updated_packages
+                    self.set_success_flags(unit, app.packages_to_update)
+                    unit.raw_output = result
 
-            mylist = [dataclasses.asdict(result) for result in update_result]
-            print(json.dumps(mylist))
-            result_list.append(Container(updates=update_result))
-        return result_list
+    def parse_result(self, result: str):
+        """Parse result.
 
-    def parse_result(self, unit: str, result: str):
+        Parses the result and creates PackageUpdateResult structure.
+        """
         lines = result.splitlines()
-        unit_update: UnitUpdate = UnitUpdate(unit=unit, packages={})
+        packages: List[PackageUpdateResult] = []
         for line in lines:
-            if line.startswith("Inst") or line.startswith("Unpacking"):
-                app_name, _, to_version = self.parse_line(line)
-                unit_update.packages[app_name] = to_version
-        return unit_update
+            # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1 Ubuntu:22.04/jammy-updates [amd64]) # noqa
+            to_version = from_version = name = ""
+            if line.startswith("Inst"):
+                _, name, from_version, to_version, *others = line.split(" ")
 
-    def parse_line(self, line: str):
-        # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1
-        # Ubuntu:22.04/jammy-updates [amd64])
-        if line.startswith("Inst"):
-            _, name, from_version, to_version, *others = line.split(" ")
-        elif line.startswith("Unpacking"):
             # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
-            _, name, from_version, _, to_version, *others = line.split(" ")
-        return name, from_version.strip("()[]"), to_version.strip("()[]")
+            elif line.startswith("Unpacking"):
+                _, name, from_version, _, to_version, *others = line.split(" ")
 
-    async def dry_run(self):
-        ...
-
-    async def run_on_unit(
-        self, controller: Controller, model: str, unit: str, command: str
-    ) -> str:
-        """Run shell command in unit."""
-        mdl: Model = await controller.get_model(model)
-        unit_to_run_on: Unit = mdl.units[unit]
-        action: Action = await unit_to_run_on.run(
-            command=command, timeout=TIMEOUT_TO_RUN_COMMAND_SECONDS
-        )
-        return action.data["results"]["Code"], action.data["results"]["Stdout"]
-
-    def get_update_commands(self, apps_to_update):
-        update_commands = []
-        for update, app, units in apps_to_update:
-            if update.get("dist-upgrade", "false").casefold() == "true".casefold():
-                update_command = UPDATE_TEMPLATE.format(
-                    install="dist-upgrade", packages=""
+            tv = to_version.strip("()[]")
+            fv = from_version.strip("()[]")
+            n = name.strip(" ")
+            if fv != "" and tv != "" and n != "":
+                packages.append(
+                    PackageUpdateResult(package=n, from_version=fv, to_version=tv)
                 )
-            else:
-                package_list = self.get_update_package_list(update)
-                update_command = UPDATE_TEMPLATE.format(
-                    install="install", packages=package_list
-                )
-            update_commands.append((update, app, list(units), update_command))
-        return update_commands
 
-    def get_update_package_list(self, update):
-        app_list = []
-        for app in update["packages-to-update"]:
-            app_list.append(app["app"])
-        package_list = " ".join(app_list)
-        return package_list
+        return packages
 
-    def get_apps_to_update(self, model: Model, updates):
-        apps_to_update = []
-        for update in updates:
+    def get_update_command(self, app: Application, dry_run: bool):
+        """Generate command according to flags."""
+        template = UPDATE_TEMPLATE + ("--dry-run" if dry_run else "")
+        if app.dist_upgrade:
+            return template.format(install="dist-upgrade", packages="")
+        else:
+            app_list = [a.package for a in app.packages_to_update]
+            package_list = " ".join(app_list)
+            return template.format(install="install", packages=package_list)
+
+    def set_apps_to_update(self, model: Model, updates: Updates, dry_run: bool):
+        """Set units to applications.
+
+        Finds the matching applications and set the units of these applications as a
+        List[UpdateResult] to application.
+        """
+        for update in updates.applications:
+            command = self.get_update_command(app=update, dry_run=dry_run)
             for app, app_status in model.applications.items():
-                if re.match(update["application"], app):
-                    apps_to_update.append((update, app, list(app_status.units.keys())))
-        return apps_to_update
+                if re.match(update.name_expr, app):
+                    unit_updates = [
+                        UnitUpdateResult(unit=u.data["name"], command=command)
+                        for u in app_status.units
+                    ]
+                    update.results.append(
+                        UpdateResult(application=app, units=unit_updates)
+                    )
 
-    def get_apps_to_update2(self, juju_status, updates):
-        apps_to_update = []
-        for update in updates:
-            for app, app_status in juju_status.applications.items():
-                if re.match(update["application"], app):
-                    apps_to_update.append((update, app, list(app_status.units.keys())))
-        return apps_to_update
+    def set_success_flags(
+        self, unit: UnitUpdateResult, expected: List[PackageToUpdate]
+    ):
+        """Set success flag for each unit."""
+        expected_set = set([(e.version, e.package) for e in expected])
+        real_set = [(p.to_version, p.package) for p in unit.packages]
 
-    async def get_juju_status(self, controller, default_model):
-        model = await controller.get_model(default_model)
-        status = await model.get_status()
-        await model.disconnect()
-        return status
+        res = expected_set.intersection(real_set)
+        unit.success = res == expected_set

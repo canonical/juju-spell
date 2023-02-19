@@ -16,12 +16,18 @@
 """JujuSpell juju add user command."""
 import logging
 import textwrap
+from typing import List
 
 import yaml
 from craft_cli.dispatcher import _CustomArgumentParser
 
 from juju_spell.cli.base import JujuWriteCMD
-from juju_spell.commands.update_packages import UpdatePackages
+from juju_spell.commands.update_packages import (
+    Application,
+    PackageToUpdate,
+    UpdatePackages,
+    Updates,
+)
 from juju_spell.exceptions import JujuSpellError
 
 logger = logging.getLogger(__name__)
@@ -36,65 +42,36 @@ class UpdatePackages(JujuWriteCMD):
         """
         This command will patch the cve by updating certain components.
 
-        {
-          "updates": [
-            {
-              "application": "^.*nova-compute.*$",
-              "dist-upgrade": "true",
-              "packages-to-update": [
-                {
-                  "app": "nova-common",
-                  "version": "2:21.2.4-0ubuntu2.1"
-                },
-                {
-                  "app":"python3-nova",
-                  "version": "2:21.2.4-0ubuntu2.1"
-                }
-              ]
-            },
-            {
-              "application": "^.*nova-cloud-controller.*$",
-              "packages-to-update": [
-                {
-                  "app": "nova-common",
-                  "version": "2:21.2.4-0ubuntu2.1"
-                },
-                {
-                  "app": "python3-nova",
-                  "version": "2:21.2.4-0ubuntu2.1"
-                }
-              ]
-            },
-            {
-              "application": "^.*glance.*$",
-              "packages-to-update": [
-                {
-                  "app":"glance-common",
-                  "version":"2:20.2.0-0ubuntu1.1"
-                },
-                {
-                  "app":"python3-glance",
-                  "version": "2:20.2.0-0ubuntu1.1"
-                }
-              ]
-            },
-            {
-              "application": "^.*cinder.*$",
-              "packages-to-update": [
-                {
-                  "app":"cinder-common",
-                  "version": "2:16.4.2-0ubuntu2.1"
-                },
-                {
-                  "app":"python3-cinder",
-                  "version":"2:16.4.2-0ubuntu2.1"
-                }
-              ]
-            }
-          ]
-        }
+        ---
+        applications:
+        - application: "^.*ubuntu.*$"
+          dist_upgrade: 'true'
+          packages_to_update:
+          - app: nova-common
+            version: 2:21.2.4-0ubuntu2.1
+          - app: python3-nova
+            version: 2:21.2.4-0ubuntu2.1
+        - application: "^.*nova-cloud-controller.*$"
+          packages_to_update:
+          - app: nova-common
+            version: 2:21.2.4-0ubuntu2.1
+          - app: python3-nova
+            version: 2:21.2.4-0ubuntu2.1
+        - application: "^.*glance.*$"
+          packages_to_update:
+          - app: glance-common
+            version: 2:20.2.0-0ubuntu1.1
+          - app: python3-glance
+            version: 2:20.2.0-0ubuntu1.1
+        - application: "^.*cinder.*$"
+          packages_to_update:
+          - app: cinder-common
+            version: 2:16.4.2-0ubuntu2.1
+          - app: python3-cinder
+            version: 2:16.4.2-0ubuntu2.1
+
         Example:
-        $ juju_spell update-packages --patch patchfile.json
+        $ juju_spell update-packages --patch patchfile.yaml
 
         """
     )
@@ -133,4 +110,22 @@ def load_patch_file(path: str):
 
 def get_patch_config(file_path: str):
     patch = load_patch_file(file_path)
-    return patch["updates"]
+    applications: List[Application] = []
+    for app in patch["applications"]:
+        packages_to_update: List[PackageToUpdate] = []
+        for package in app.get("packages_to_update", []):
+            p = PackageToUpdate(
+                package=package["app"], version=package.get("version", None)
+            )
+            packages_to_update.append(p)
+
+        applications.append(
+            Application(
+                name_expr=app["application"],
+                dist_upgrade=app.get("dist_upgrade", False),
+                results=[],
+                packages_to_update=packages_to_update,
+            )
+        )
+
+    return Updates(applications=applications)
