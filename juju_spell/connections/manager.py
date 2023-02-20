@@ -1,20 +1,13 @@
-import asyncio
 import dataclasses
 import logging
-import time
 from typing import Dict, Union
-from uuid import UUID
 
 from juju import juju
-from juju.errors import JujuConnectionError
 
 from juju_spell.config import Controller
+from juju_spell.connections.conn_builder import build_controller_conn
 from juju_spell.connections.network import BaseConnection, get_connection
-from juju_spell.settings import (
-    DEFAULT_CONNECTIN_TIMEOUT,
-    DEFAULT_RETRY_BACKOFF,
-    DEFUALT_MAX_FRAME_SIZE,
-)
+from juju_spell.settings import DEFUALT_MAX_FRAME_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -28,57 +21,6 @@ class Connection:
 def _get_wait_time(attempt: int, retry_backoff: Union[int, float]) -> float:
     """Calculate wait time for reconnection."""
     return retry_backoff ** (attempt - 2)  # exponential wait y^(x-2)
-
-
-async def controller_direct_connection(
-    controller: juju.Controller,
-    uuid: UUID,
-    name: str,
-    endpoint: str,
-    username: str,
-    password: str,
-    cacert: str,
-):
-    """Direct connection to controller without JUJU_DATA.
-
-    This is a helper function for connecting to a controller with simple exponential
-    retry and with fix for missing controller_name and controller_uuid.
-    """
-    start = time.time()
-    attempt: int = 0
-    while True:
-        try:
-            await controller._connector.connect(
-                endpoint=endpoint,
-                username=username,
-                password=password,
-                cacert=cacert,
-                retries=0,  # disable retires in connection
-                retry_backoff=0,
-            )
-            controller._connector.controller_uuid = uuid
-            controller._connector.controller_name = name
-            break
-        except JujuConnectionError:
-            # Note(rgildein): Connection will raise JujuConnectionError if endpoint
-            # is unreachable. This can happen, for example, when port forwarding is
-            # through a subprocess and the process has not yet started.
-            logger.info("%s connection to controller %s failed", uuid, name)
-            wait = _get_wait_time(attempt, DEFAULT_RETRY_BACKOFF)
-            await asyncio.sleep(wait)
-            if time.time() - start >= DEFAULT_CONNECTIN_TIMEOUT:
-                raise
-
-            attempt += 1
-            continue
-        except Exception as error:
-            logger.info(
-                "%s connection to controller %s failed with error '%s'",
-                uuid,
-                name,
-                error,
-            )
-            raise
 
 
 class ConnectManager(object):
@@ -140,7 +82,7 @@ class ConnectManager(object):
         self.connections[controller_config.name] = Connection(
             controller, connection_process
         )
-        await controller_direct_connection(
+        await build_controller_conn(
             controller,
             uuid=controller_config.uuid,
             name=controller_config.name,
@@ -148,6 +90,7 @@ class ConnectManager(object):
             username=controller_config.user,
             password=controller_config.password,
             cacert=controller_config.ca_cert,
+            retry_policy=controller_config.retry_policy,
         )
         logger.info("controller %s was connected", controller.controller_name)
         return controller
