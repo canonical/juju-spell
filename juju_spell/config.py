@@ -11,7 +11,11 @@ import yaml
 from confuse import ConfigError, RootView
 
 from juju_spell.exceptions import JujuSpellError
-from juju_spell.settings import DEFAULT_PORT_RANGE
+from juju_spell.settings import (
+    DEFAULT_CONNECTIN_TIMEOUT,
+    DEFAULT_CONNECTIN_WAIT,
+    DEFAULT_PORT_RANGE,
+)
 from juju_spell.utils import merge_list_of_dict_by_key
 
 logger = logging.getLogger(__name__)
@@ -101,6 +105,13 @@ class ConnectionDict(confuse.MappingTemplate):
         return Connection(**output)
 
 
+class RetryPolicyDict(confuse.MappingTemplate):
+    def value(self, view, template=None):
+        """Get RetryPolicy object from dict."""
+        output = super().value(view, template)
+        return RetryPolicy(**output)
+
+
 DEFAULT_KEY = "default"
 JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
     {
@@ -143,6 +154,15 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
                             "Invalid port_range definition",
                         )
                     ),
+                }
+            )
+        ),
+        "retry_policy": confuse.Optional(
+            RetryPolicyDict(
+                {
+                    "timeout": confuse.Optional(int),
+                    "attempt": confuse.Optional(int),
+                    "wait": confuse.Optional(int),
                 }
             )
         ),
@@ -210,6 +230,15 @@ JUJU_DEFAULT_CONTROLLER_DICT = {
             }
         )
     ),
+    "retry_policy": confuse.Optional(
+        RetryPolicyDict(
+            {
+                "timeout": confuse.Optional(int),
+                "attempt": confuse.Optional(int),
+                "wait": confuse.Optional(int),
+            }
+        )
+    ),
 }
 
 JUJUSPELL_DEFAULT_CONFIG_TEMPLATE = confuse.MappingTemplate(
@@ -239,6 +268,15 @@ JUJUSPELL_CONFIG_TEMPLATE = confuse.MappingTemplate(
 
 
 @dataclasses.dataclass
+class RetryPolicy:
+    """ConnectionManager retry policy."""
+
+    attempt: Optional[int] = 3
+    wait: Optional[int] = DEFAULT_CONNECTIN_WAIT
+    timeout: Optional[int] = DEFAULT_CONNECTIN_TIMEOUT
+
+
+@dataclasses.dataclass
 class Connection:
     destination: str
     jumps: Optional[List[str]] = None
@@ -264,6 +302,7 @@ class Controller:
     tags: Optional[List[str]] = None
     risk: int = 5
     connection: Optional[Connection] = None
+    retry_policy: Optional[RetryPolicy] = None
 
 
 @dataclasses.dataclass

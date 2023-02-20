@@ -237,6 +237,13 @@ def test_validate_config_failure(extra_configuration, test_config_dict):
             JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
             True,
         ),
+        (
+            {
+                "default": {"controller": {"retry_policy": {"timeout": 5}}},
+            },
+            JUJUSPELL_DEFAULT_CONFIG_TEMPLATE,
+            False,
+        ),
     ],
 )
 def test_config_match_template(

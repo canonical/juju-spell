@@ -1,12 +1,11 @@
+import copy
 import io
 import unittest
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 import yaml
-from juju.errors import JujuAPIError, JujuConnectionError
 
 from juju_spell import config as juju_spell_config
 from tests.unit.conftest import TEST_CONFIG, TEST_PERSONAL_CONFIG
@@ -30,70 +29,6 @@ def test_get_wait_time(attempt, retry_backoff, exp_wait):
     wait = _get_wait_time(attempt, retry_backoff)
 
     assert exp_wait == round(wait, 2)
-
-
-@pytest.mark.asyncio
-async def test_controller_direct_connection():
-    """Test direct connection to controller with reties."""
-    from juju_spell.connections.manager import controller_direct_connection
-
-    mock_controller = AsyncMock()
-    mock_controller._connector.connect.side_effect = [JujuConnectionError, None]
-    uuid = uuid4()
-    name = "test"
-
-    await controller_direct_connection(
-        mock_controller, uuid, name, "localhost:1234", "user", "password", "ca_cert"
-    )
-
-    mock_controller._connector.connect.assert_has_awaits(
-        [
-            mock.call(
-                endpoint="localhost:1234",
-                username="user",
-                password="password",
-                cacert="ca_cert",
-                retries=0,
-                retry_backoff=0,
-            )
-        ]
-        * 2  # copy 2 times
-    )
-    assert mock_controller._connector.controller_uuid == uuid
-    assert mock_controller._connector.controller_name == name
-
-
-@pytest.mark.asyncio
-@mock.patch("juju_spell.connections.manager.DEFAULT_CONNECTIN_TIMEOUT", new=0.5)
-async def test_controller_direct_connection_timeout():
-    """Test direct connection to controller with reties."""
-    from juju_spell.connections.manager import controller_direct_connection
-
-    mock_controller = AsyncMock()
-    mock_controller._connector.connect.side_effect = JujuConnectionError
-    uuid = uuid4()
-    name = "test"
-
-    with pytest.raises(JujuConnectionError):
-        await controller_direct_connection(
-            mock_controller, uuid, name, "localhost:1234", "user", "password", "ca_cert"
-        )
-
-
-@pytest.mark.asyncio
-async def test_controller_direct_connection_exception():
-    """Test direct connection to controller with reties."""
-    from juju_spell.connections.manager import controller_direct_connection
-
-    mock_controller = AsyncMock()
-    mock_controller._connector.connect.side_effect = JujuAPIError(MagicMock())
-    uuid = uuid4()
-    name = "test"
-
-    with pytest.raises(JujuAPIError):
-        await controller_direct_connection(
-            mock_controller, uuid, name, "localhost:1234", "user", "password", "ca_cert"
-        )
 
 
 @mock.patch("juju_spell.connections.connect_manager")
@@ -135,8 +70,10 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
             **config["controllers"][0]
         )  # with connection
         self.controller_config_2 = juju_spell_config.Controller(
-            **config["controllers"][1]
+            **config["controllers"][1],
         )  # without connection
+
+        self.retry_policy = juju_spell_config.RetryPolicy()
 
     def tearDown(self) -> None:
         """Clean up after tests."""
@@ -154,10 +91,12 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connect_manager1.connections, connect_manager2.connections)
 
     @mock.patch("juju_spell.connections.manager.juju.Controller")
-    @mock.patch("juju_spell.connections.manager.controller_direct_connection")
-    async def test_connect(self, mock_controller_direct_connection, mock_controller):
+    @mock.patch("juju_spell.connections.manager.build_controller_conn")
+    async def test_connect(self, mock_build_controller_conn, mock_controller):
         """Test connection with direct access."""
-        config = self.controller_config_2
+        config = copy.copy(self.controller_config_2)
+        config.retry_policy = self.retry_policy
+
         exp_endpoint = "localhost:17071"
 
         mocked_controller = mock_controller.return_value = AsyncMock()
@@ -169,7 +108,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
             mock_get_connection.assert_called_once_with(config, False)
 
         assert controller == mocked_controller
-        mock_controller_direct_connection.assert_called_once_with(
+        mock_build_controller_conn.assert_called_once_with(
             mocked_controller,
             uuid=config.uuid,
             name=config.name,
@@ -177,6 +116,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
             username=config.user,
             password=config.password,
             cacert=config.ca_cert,
+            retry_policy=self.retry_policy,
         )
         assert config.name in self.connect_manager.connections
 
