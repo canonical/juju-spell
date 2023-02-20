@@ -24,6 +24,10 @@ Example:
 default:
   controller:
     user: admin
+    retry_policy:
+      timeout: 60
+      attempt: 3
+      wait: 1
 controllers:
   - name: example_controller
     customer: example_customer
