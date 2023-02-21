@@ -24,7 +24,7 @@ apps:
 parts:
   juju-spell:
     plugin: python
-    python-requirements: [ ./requirements.txt ]
+    python-packages: [ "." ]
     source: .
     stage-packages:
       - git
