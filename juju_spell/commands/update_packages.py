@@ -1,7 +1,7 @@
 import copy
 import dataclasses
 import re
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from juju.action import Action
 from juju.controller import Controller
@@ -66,26 +66,38 @@ class UpdatePackages(BaseJujuCommand):
         self, controller: Controller, models: Optional[List[str]] = None, **kwargs
     ) -> Optional[Result]:
         """Run update."""
-        return await self.make_updates(controller=controller, models=models, **kwargs)
+        return await self.make_updates(
+            controller=controller,
+            models=models,
+            model_mapping=kwargs["controller_config"].model_mapping,
+            updates=kwargs["patch"],
+            dry_run=False,
+        )
 
     async def dry_run(
         self, controller: Controller, models: Optional[List[str]] = None, **kwargs
     ) -> Optional[Result]:
         """Run update with --dry-run flag."""
-        return await self.make_updates(controller=controller, models=models, **kwargs)
+        return await self.make_updates(
+            controller=controller,
+            models=models,
+            model_mapping=kwargs["controller_config"].model_mapping,
+            updates=kwargs["patch"],
+            dry_run=True,
+        )
 
     async def make_updates(
         self,
         controller: Controller,
         models: Optional[List[str]],
         dry_run: bool,
-        **kwargs
+        model_mapping: Dict[str, List[str]],
+        updates: Updates,
     ) -> Optional[Result]:
-        updates: Updates = kwargs["patch"]
         output = {}
         async for name, model in self.get_filtered_models(
             controller=controller,
-            model_mappings=kwargs["controller_config"].model_mapping,
+            model_mappings=model_mapping,
             models=models,
         ):
             model_result: Updates = copy.copy(updates)
