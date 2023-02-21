@@ -114,10 +114,10 @@ def get_patch_config(file_path: str):
     for app in patch["applications"]:
         packages_to_update: List[PackageToUpdate] = []
         for package in app.get("packages_to_update", []):
-            p = PackageToUpdate(
+            package_to_update = PackageToUpdate(
                 package=package["app"], version=package.get("version", None)
             )
-            packages_to_update.append(p)
+            packages_to_update.append(package_to_update)
 
         applications.append(
             Application(
