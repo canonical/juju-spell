@@ -142,12 +142,14 @@ class UpdatePackages(BaseJujuCommand):
             elif line.startswith("Unpacking"):
                 _, name, from_version, _, to_version, *others = line.split(" ")
 
-            tv = to_version.strip("()[]")
-            fv = from_version.strip("()[]")
-            n = name.strip(" ")
-            if fv != "" and tv != "" and n != "":
+            to_version = to_version.strip("()[]")
+            from_version = from_version.strip("()[]")
+            name = name.strip(" ")
+            if from_version != "" and to_version != "" and name != "":
                 packages.append(
-                    PackageUpdateResult(package=n, from_version=fv, to_version=tv)
+                    PackageUpdateResult(
+                        package=name, from_version=from_version, to_version=to_version
+                    )
                 )
 
         return packages
