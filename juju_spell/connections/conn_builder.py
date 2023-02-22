@@ -1,34 +1,29 @@
 import logging
-import typing as t
+from typing import Callable, Optional
 from uuid import UUID
 
 import tenacity
 from juju import juju
 from juju.errors import JujuConnectionError
-from tenacity import RetryError, Retrying
+from tenacity import RetryCallState, RetryError, Retrying
+from tenacity.retry import RetryBaseT
+from tenacity.stop import StopBaseT
+from tenacity.wait import WaitBaseT
 
 from juju_spell.config import RetryPolicy
 from juju_spell.settings import DEFAULT_CONNECTIN_WAIT, DEFUALT_MAX_FRAME_SIZE
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:
-    import types  # noqa
 
-    from tenacity import RetryCallState
-    from tenacity.retry import RetryBaseT
-    from tenacity.stop import StopBaseT
-    from tenacity.wait import WaitBaseT
-
-
-def _after_log(uuid, name) -> t.Callable:
+def _after_log(uuid, name) -> Callable:
     def log_it(retry_state: "RetryCallState") -> None:
         logger.info("%s connection to controller %s failed", uuid, name)
 
     return log_it
 
 
-def _before_log(uuid, name) -> t.Callable:
+def _before_log(uuid, name) -> Callable:
     def log_it(retry_state: "RetryCallState") -> None:
         logger.info("Start connect to controller %s %s", uuid, name)
 
@@ -88,7 +83,7 @@ async def build_controller_conn(
     username: str,
     password: str,
     cacert: str,
-    retry_policy: t.Optional[RetryPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ):
     # Apply default to retry policy if not config.
     if retry_policy is None:
