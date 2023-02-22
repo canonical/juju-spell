@@ -152,7 +152,8 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
                         PortRange(
                             PORT_RANGE,
                             "Invalid port_range definition",
-                        )
+                        ),
+                        default=DEFAULT_PORT_RANGE,
                     ),
                 }
             )
