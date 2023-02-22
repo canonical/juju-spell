@@ -15,17 +15,24 @@ logger = logging.getLogger(__name__)
 if t.TYPE_CHECKING:
     import types  # noqa
 
+    from tenacity import RetryCallState
     from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
 
-def _after_log(uuid, name):
-    logger.info("%s connection to controller %s failed", uuid, name)
+def _after_log(uuid, name) -> t.Callable:
+    def log_it(retry_state: "RetryCallState") -> None:
+        logger.info("%s connection to controller %s failed", uuid, name)
+
+    return log_it
 
 
-def _before_log(uuid, name):
-    logger.info("Start connect to controller %s %s", uuid, name)
+def _before_log(uuid, name) -> t.Callable:
+    def log_it(retry_state: "RetryCallState") -> None:
+        logger.info("Start connect to controller %s %s", uuid, name)
+
+    return log_it
 
 
 async def _conn(
