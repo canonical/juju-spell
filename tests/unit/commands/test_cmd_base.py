@@ -39,8 +39,20 @@ import pytest
         (
             ["model1", "model2", "model3"],
             ["model1", "default"],
-            ["model1"],
+            ["model1", "default"],
             {"lma": [], "default": []},
+        ),
+        (
+            ["model1", "model2", "model3"],
+            ["model1", "default"],
+            ["model1", "default"],
+            {},
+        ),
+        (
+            ["model1", "model2", "model3"],
+            ["model1", "default"],
+            ["model1", "xx", "yy"],
+            {"lma": [], "default": ["xx", "yy"]},
         ),
     ],
 )
