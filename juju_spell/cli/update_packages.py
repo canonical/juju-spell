@@ -45,30 +45,19 @@ class UpdatePackages(JujuWriteCMD):
         ---
         applications:
         - application: "^.*ubuntu.*$"
-          dist_upgrade: 'true'
+          dist_upgrade: True
           packages_to_update:
           - app: nova-common
             version: 2:21.2.4-0ubuntu2.1
           - app: python3-nova
             version: 2:21.2.4-0ubuntu2.1
         - application: "^.*nova-cloud-controller.*$"
+          dist_upgrade: False
           packages_to_update:
           - app: nova-common
             version: 2:21.2.4-0ubuntu2.1
           - app: python3-nova
             version: 2:21.2.4-0ubuntu2.1
-        - application: "^.*glance.*$"
-          packages_to_update:
-          - app: glance-common
-            version: 2:20.2.0-0ubuntu1.1
-          - app: python3-glance
-            version: 2:20.2.0-0ubuntu1.1
-        - application: "^.*cinder.*$"
-          packages_to_update:
-          - app: cinder-common
-            version: 2:16.4.2-0ubuntu2.1
-          - app: python3-cinder
-            version: 2:16.4.2-0ubuntu2.1
 
         Example:
         $ juju_spell update-packages --patch patchfile.yaml
@@ -111,6 +100,7 @@ def load_patch_file(path: str):
 def get_patch_config(file_path: str):
     patch = load_patch_file(file_path)
     applications: List[Application] = []
+    errors = []
     for app in patch["applications"]:
         packages_to_update: List[PackageToUpdate] = []
         for package in app.get("packages_to_update", []):
@@ -119,13 +109,21 @@ def get_patch_config(file_path: str):
             )
             packages_to_update.append(package_to_update)
 
+        dist_upgrade = app.get("dist_upgrade", False)
+        if not isinstance(dist_upgrade, bool):
+            errors.append(
+                f"application['{app['application']}'].dist_upgrade should be bool"
+            )
         applications.append(
             Application(
                 name_expr=app["application"],
-                dist_upgrade=app.get("dist_upgrade", False),
+                dist_upgrade=dist_upgrade,
                 results=[],
                 packages_to_update=packages_to_update,
             )
         )
+
+    if len(errors) > 0:
+        raise JujuSpellError("errors in input file:\n" + "\n".join(errors))
 
     return Updates(applications=applications)

@@ -136,11 +136,13 @@ def _apply_model_mappings(
     Returns:
         list of models replaced with values from model_mappings
     """
-    if model_mappings is None:
+    if model_mappings is None or len(model_mappings) <= 0:
         return models
 
     results = []
     for model in models:
-        results.extend(model_mappings.get(model, [model]))
+        model_list = model_mappings.get(model, [model])
+        model_list = model_list if len(model_list) > 0 else [model]
+        results.extend(model_list)
 
     return results

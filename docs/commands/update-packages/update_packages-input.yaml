@@ -1,13 +1,14 @@
 ---
 applications:
 - application: "^.*ubuntu.*$"
-  dist_upgrade: 'true'
+  dist_upgrade: True
   packages_to_update:
   - app: nova-common
     version: 2:21.2.4-0ubuntu2.1
   - app: python3-nova
     version: 2:21.2.4-0ubuntu2.1
 - application: "^.*nova-cloud-controller.*$"
+  dist_upgrade: True
   packages_to_update:
   - app: nova-common
     version: 2:21.2.4-0ubuntu2.1

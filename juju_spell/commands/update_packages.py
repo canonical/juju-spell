@@ -100,7 +100,7 @@ class UpdatePackages(BaseJujuCommand):
             model_mappings=model_mapping,
             models=models,
         ):
-            model_result: Updates = copy.copy(updates)
+            model_result: Updates = copy.deepcopy(updates)
             self.set_apps_to_update(model, model_result, dry_run=dry_run)
             await self.run_updates_on_model(model, model_result)
 
@@ -134,13 +134,15 @@ class UpdatePackages(BaseJujuCommand):
         packages: List[PackageUpdateResult] = []
         for line in lines:
             # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1 Ubuntu:22.04/jammy-updates [amd64]) # noqa
-            to_version = from_version = name = ""
-            if line.startswith("Inst"):
+            to_version = ""
+            from_version = ""
+            name = ""
+            if line.startswith("Inst "):
                 _, name, from_version, to_version, *others = line.split(" ")
 
             # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
             elif line.startswith("Unpacking"):
-                _, name, from_version, _, to_version, *others = line.split(" ")
+                _, name, to_version, _, from_version, *others = line.split(" ")
 
             to_version = to_version.strip("()[]")
             from_version = from_version.strip("()[]")
