@@ -177,7 +177,7 @@ class UpdatePackages(BaseJujuCommand):
             for app, app_status in model.applications.items():
                 if re.match(update.name_expr, app):
                     unit_updates = [
-                        UnitUpdateResult(unit=u.data["name"], command=command)
+                        UnitUpdateResult(unit=u.name, command=command)
                         for u in app_status.units
                     ]
                     update.results.append(

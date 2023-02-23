@@ -24,32 +24,6 @@ applications:
     version: 3.2.3-8ubuntu3.1
 """
 
-RAW_OUTPUT_TEST_PATCH = """
-Hit:1 http://nova.clouds.archive.ubuntu.com/ubuntu jammy InRelease
-Hit:2 http://nova.clouds.archive.ubuntu.com/ubuntu jammy-updates InRelease
-Hit:3 http://security.ubuntu.com/ubuntu jammy-security InRelease
-Hit:4 http://nova.clouds.archive.ubuntu.com/ubuntu jammy-backports InRelease
-Reading package lists... Done
-Reading package lists... Done
-Building dependency tree... Done
-Reading state information... Done
-The following additional packages will be installed:
-  apt-utils libapt-pkg6.0
-Suggested packages:
-  apt-doc aptitude | synaptic | wajig
-The following packages will be upgraded:
-  apt apt-utils libapt-pkg6.0 rsync
-4 upgraded, 0 newly installed, 0 to remove and 50 not upgraded.
-Inst libapt-pkg6.0 [2.4.7] (2.4.8 Ubuntu:22.04/jammy-updates [amd64])
-Conf libapt-pkg6.0 (2.4.8 Ubuntu:22.04/jammy-updates [amd64])
-Inst apt [2.4.7] (2.4.8 Ubuntu:22.04/jammy-updates [amd64]) [apt-utils:amd64 ]
-Conf apt (2.4.8 Ubuntu:22.04/jammy-updates [amd64]) [apt-utils:amd64 ]
-Inst apt-utils [2.4.7] (2.4.8 Ubuntu:22.04/jammy-updates [amd64])
-Inst rsync [3.2.3-8ubuntu3] (3.2.3-8ubuntu3.1 Ubuntu:22.04/jammy-updates [amd64])
-Conf apt-utils (2.4.8 Ubuntu:22.04/jammy-updates [amd64])
-Conf rsync (3.2.3-8ubuntu3.1 Ubuntu:22.04/jammy-updates [amd64])
-"""
-
 RAW_OUTPUT_DRYRUN = """
 Hit:1 http://nova.clouds.archive.ubuntu.com/ubuntu jammy InRelease
 Hit:2 http://nova.clouds.archive.ubuntu.com/ubuntu jammy-updates InRelease
@@ -151,7 +125,7 @@ def unit_update_result():
     return UnitUpdateResult(
         unit="ubuntu/0",
         command=UNIT_UPDATE_COMMAND,
-        raw_output=RAW_OUTPUT_TEST_PATCH,
+        raw_output=RAW_OUTPUT_DRYRUN,
         success=True,
         packages=[
             PackageUpdateResult(
@@ -169,12 +143,12 @@ def unit_update_result():
 
 
 @pytest.fixture
-def expected_packages(_get_patch_config):
-    return _get_patch_config.applications[0].packages_to_update
+def expected_packages(patch_config):
+    return patch_config.applications[0].packages_to_update
 
 
 @pytest.fixture(params=[TEST_PATCH])
-def _get_patch_config(request, tmp_path):
+def patch_config(request, tmp_path):
     """Test get_patch_config."""
     file_path = tmp_path / f"{uuid.uuid4()}.config"
     with open(file_path, "w", encoding="utf8") as file:
@@ -183,25 +157,45 @@ def _get_patch_config(request, tmp_path):
     return get_patch_config(file_path)
 
 
+async def _mock_controller(model):
+    controller = AsyncMock()
+    controller.get_model.return_value = model
+    controller_config = AsyncMock()
+    controller_config.model_mapping = None
+    return controller, controller_config
+
+
+async def _mock_model(output):
+    model = AsyncMock()
+    unit = AsyncMock()
+    unit.name = "ubuntu/0"
+    action = MagicMock()
+    action.data = {"results": {"Stdout": output}}
+    unit.run.return_value = action
+    model.units = {"ubuntu/0": unit}
+    app_status = AsyncMock()
+    app_status.units = [unit]
+    model.applications = {"ubuntu": app_status}
+    return model
+
+
 def test_set_success_flags(unit_update_result, expected_packages):
     update_packages: UpdatePackages = UpdatePackages()
     update_packages.set_success_flags(unit_update_result, expected_packages)
     assert unit_update_result.success
 
 
-def test_set_apps_to_update(_get_patch_config, unit_update_result):
-    result = copy.deepcopy(_get_patch_config)
+def test_set_apps_to_update(patch_config, unit_update_result):
+    result = copy.deepcopy(patch_config)
     model = AsyncMock()
     app_status = AsyncMock()
     unit = AsyncMock()
-    unit.data = {"name": "ubuntu/0"}
+    unit.name = "ubuntu/0"
     app_status.units = [unit]
     model.applications = {"ubuntu": app_status}
 
     update_packages: UpdatePackages = UpdatePackages()
-    update_packages.set_apps_to_update(
-        updates=_get_patch_config, model=model, dry_run=False
-    )
+    update_packages.set_apps_to_update(updates=patch_config, model=model, dry_run=False)
 
     unit_update_result = copy.deepcopy(unit_update_result)
     unit_update_result.packages = None
@@ -212,13 +206,13 @@ def test_set_apps_to_update(_get_patch_config, unit_update_result):
         UpdateResult(application="ubuntu", units=[update_result])
     ]
 
-    assert result == _get_patch_config
+    assert result == patch_config
 
 
-def test_get_update_command(_get_patch_config):
+def test_get_update_command(patch_config):
     update_packages: UpdatePackages = UpdatePackages()
 
-    app = _get_patch_config.applications[0]
+    app = patch_config.applications[0]
     res = update_packages.get_update_command(app, False)
     assert (
         res
@@ -251,7 +245,6 @@ def test_get_update_command(_get_patch_config):
 def test_parse_result(unit_update_result):
     update_packages: UpdatePackages = UpdatePackages()
     result = update_packages.parse_result(RAW_OUTPUT_INSTALL)
-
     assert [p in result for p in unit_update_result.packages] == [True, True]
 
     result = update_packages.parse_result(RAW_OUTPUT_DRYRUN)
@@ -259,16 +252,11 @@ def test_parse_result(unit_update_result):
 
 
 @pytest.mark.asyncio
-async def test_run_updates_on_model(_get_patch_config, unit_update_result):
+async def test_run_updates_on_model(patch_config, unit_update_result):
     update_packages: UpdatePackages = UpdatePackages()
-    model = AsyncMock()
-    unit = AsyncMock()
-    action = MagicMock()
-    action.data = {"results": {"Stdout": RAW_OUTPUT_TEST_PATCH}}
-    unit.run.return_value = action
-    model.units = {"ubuntu/0": unit}
+    model = await _mock_model(RAW_OUTPUT_DRYRUN)
 
-    _get_patch_config.applications[0].results = [
+    patch_config.applications[0].results = [
         UpdateResult(
             application="ubuntu",
             units=[
@@ -276,14 +264,81 @@ async def test_run_updates_on_model(_get_patch_config, unit_update_result):
                     unit="ubuntu/0",
                     command=UNIT_UPDATE_COMMAND,
                     success=False,
-                    raw_output=RAW_OUTPUT_TEST_PATCH,
+                    raw_output=RAW_OUTPUT_DRYRUN,
                 )
             ],
         )
     ]
 
-    await update_packages.run_updates_on_model(model=model, updates=_get_patch_config)
+    await update_packages.run_updates_on_model(model=model, updates=patch_config)
     assert [
-        p in _get_patch_config.applications[0].results[0].units[0].packages
+        p in patch_config.applications[0].results[0].units[0].packages
+        for p in unit_update_result.packages
+    ] == [True, True]
+
+
+@pytest.mark.asyncio
+async def test_make_updates(patch_config, unit_update_result):
+    model = await _mock_model(RAW_OUTPUT_DRYRUN)
+
+    controller = AsyncMock()
+    controller.get_model.return_value = model
+
+    update_packages: UpdatePackages = UpdatePackages()
+    result = await update_packages.make_updates(
+        controller=controller,
+        updates=patch_config,
+        models=["lma"],
+        model_mapping=None,
+        dry_run=False,
+    )
+
+    assert result.success
+    assert [
+        p in result.output["lma"].applications[0].results[0].units[0].packages
+        for p in unit_update_result.packages
+    ] == [True, True]
+
+
+@pytest.mark.asyncio
+async def test_execute(patch_config, unit_update_result):
+    model = await _mock_model(RAW_OUTPUT_DRYRUN)
+    controller, controller_config = await _mock_controller(model)
+
+    update_packages: UpdatePackages = UpdatePackages()
+    result = await update_packages.execute(
+        controller=controller,
+        models=["lma"],
+        **{
+            "controller_config": controller_config,
+            "patch": patch_config,
+            "dry_run": False,
+        },
+    )
+    assert result.success
+    assert [
+        p in result.output["lma"].applications[0].results[0].units[0].packages
+        for p in unit_update_result.packages
+    ] == [True, True]
+
+
+@pytest.mark.asyncio
+async def test_dry_run(patch_config, unit_update_result):
+    model = await _mock_model(RAW_OUTPUT_DRYRUN)
+    controller, controller_config = await _mock_controller(model)
+
+    update_packages: UpdatePackages = UpdatePackages()
+    result = await update_packages.dry_run(
+        controller=controller,
+        models=["lma"],
+        **{
+            "controller_config": controller_config,
+            "patch": patch_config,
+            "dry_run": True,
+        },
+    )
+    assert result.success
+    assert [
+        p in result.output["lma"].applications[0].results[0].units[0].packages
         for p in unit_update_result.packages
     ] == [True, True]
