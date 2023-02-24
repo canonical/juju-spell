@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """JujuSpell juju add user command."""
 import logging
+import os
 import textwrap
 from typing import List
 
@@ -124,6 +125,8 @@ def get_patch_config(file_path: str):
         )
 
     if len(errors) > 0:
-        raise JujuSpellError("errors in input file:\n" + "\n".join(errors))
+        raise JujuSpellError(
+            f"errors in input file:{os.linesep}{os.linesep.join(errors)}"
+        )
 
     return Updates(applications=applications)
