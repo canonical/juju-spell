@@ -188,8 +188,8 @@ class UpdatePackages(BaseJujuCommand):
         self, unit: UnitUpdateResult, expected: List[PackageToUpdate]
     ):
         """Set success flag for each unit."""
-        expected_set = set([(e.version, e.package) for e in expected])
-        real_set = [(p.to_version, p.package) for p in unit.packages]
+        expected_set = set((e.version, e.package) for e in expected)
+        real_set = set((p.to_version, p.package) for p in unit.packages)
 
         res = expected_set.intersection(real_set)
         unit.success = res == expected_set
