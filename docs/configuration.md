@@ -22,12 +22,14 @@ The config for JujuSpell continues list of controllers where each controller hav
 Example:
 ```yaml
 default:
-  controller:
+  controller: # default values
     user: admin
     retry_policy:
       timeout: 60
       attempt: 3
       wait: 1
+    connection:
+      port_range: "17071:17170"
 controllers:
   - name: example_controller
     customer: example_customer
