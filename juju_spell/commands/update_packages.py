@@ -66,6 +66,7 @@ class UpdatePackages(BaseJujuCommand):
         self, controller: Controller, models: Optional[List[str]] = None, **kwargs
     ) -> Optional[Result]:
         """Run update."""
+        self.logger.info(f"Running execute on controller {controller.controller_name}")
         return await self.make_updates(
             controller=controller,
             models=models,
@@ -78,6 +79,7 @@ class UpdatePackages(BaseJujuCommand):
         self, controller: Controller, models: Optional[List[str]] = None, **kwargs
     ) -> Optional[Result]:
         """Run update with --dry-run flag."""
+        self.logger.info(f"Running dry_run on controller {controller.controller_name}")
         return await self.make_updates(
             controller=controller,
             models=models,
@@ -116,6 +118,10 @@ class UpdatePackages(BaseJujuCommand):
             for result in app.results:
                 for unit in result.units:
                     juju_unit = model.units[unit.unit]
+                    self.logger.info(
+                        f"updating model:{model.info.name} unit:{unit.unit} with"
+                        f" command:{unit.command}"
+                    )
                     action: Action = await juju_unit.run(
                         command=unit.command, timeout=TIMEOUT_TO_RUN_COMMAND_SECONDS
                     )
@@ -175,10 +181,15 @@ class UpdatePackages(BaseJujuCommand):
         Finds the matching applications and set the units of these applications as a
         List[UpdateResult] to application.
         """
+        self.logger.info(f"Finding applications to update on model:{model.info.name}")
         for update in updates.applications:
             command = self.get_update_command(app=update, dry_run=dry_run)
             for app, app_status in model.applications.items():
                 if re.match(update.name_expr, app):
+                    self.logger.info(
+                        f"model:{model.info.name} application:{app} "
+                        f"units:{[u.name for u in app_status.units]} will be updated"
+                    )
                     unit_updates = [
                         UnitUpdateResult(unit=u.name, command=command)
                         for u in app_status.units
