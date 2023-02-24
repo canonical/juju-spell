@@ -64,7 +64,7 @@ def get_config(user, host, owner):
 
         config["uuid"] = controllers["controllers"][controller]["uuid"]
         config["ca_cert"] = controllers["controllers"][controller]["ca-cert"]
-        config["model_mapping"] = {"lma": "", "default": ""}
+        config["model_mapping"] = {"lma": [], "default": []}
         config["connection"] = {"destination": host}
         config["user"] = accounts["controllers"][controller]["user"]
         if "password" in accounts["controllers"][controller]:
