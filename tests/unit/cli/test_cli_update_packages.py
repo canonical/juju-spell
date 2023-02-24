@@ -67,11 +67,11 @@ def test_load_patch_file(tmp_path, input_yaml):
 
 
 @pytest.mark.parametrize("input_yaml", [TEST_PATCH])
-def test_get_patch_config(tmp_path, input_yaml):
+@mock.patch("juju_spell.cli.update_packages.load_patch_file")
+def test_get_patch_config(mock_load_patch_file, input_yaml):
     """Test get_patch_config."""
-    file_path = tmp_path / f"{uuid.uuid4()}.config"
-    with open(file_path, "w", encoding="utf8") as file:
-        file.write(input_yaml)
+    mock_load_patch_file.return_value = yaml.safe_load(io.StringIO(input_yaml))
 
-    real: Updates = get_patch_config(file_path)
+    real: Updates = get_patch_config(file_path="test")
     assert real == TEST_UPDATES
+    mock_load_patch_file.assert_called_once_with("test")
