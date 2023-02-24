@@ -1,0 +1,28 @@
+---
+applications:
+- application: "^.*ubuntu.*$"
+  dist_upgrade: True
+  packages_to_update:
+  - app: nova-common
+    version: 2:21.2.4-0ubuntu2.1
+  - app: python3-nova
+    version: 2:21.2.4-0ubuntu2.1
+- application: "^.*nova-cloud-controller.*$"
+  dist_upgrade: True
+  packages_to_update:
+  - app: nova-common
+    version: 2:21.2.4-0ubuntu2.1
+  - app: python3-nova
+    version: 2:21.2.4-0ubuntu2.1
+- application: "^.*glance.*$"
+  packages_to_update:
+  - app: glance-common
+    version: 2:20.2.0-0ubuntu1.1
+  - app: python3-glance
+    version: 2:20.2.0-0ubuntu1.1
+- application: "^.*cinder.*$"
+  packages_to_update:
+  - app: cinder-common
+    version: 2:16.4.2-0ubuntu2.1
+  - app: python3-cinder
+    version: 2:16.4.2-0ubuntu2.1

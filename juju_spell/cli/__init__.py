@@ -22,6 +22,7 @@ from .ping import PingCMD
 from .remove_user import RemoveUserCMD
 from .show_controller import ShowControllerInformationCMD
 from .status import StatusCMD
+from .update_packages import UpdatePackages
 
 __all__ = [
     "AddUserCMD",
@@ -31,4 +32,5 @@ __all__ = [
     "PingCMD",
     "StatusCMD",
     "ShowControllerInformationCMD",
+    "UpdatePackages",
 ]

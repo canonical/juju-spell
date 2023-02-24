@@ -1,0 +1,152 @@
+[
+ {
+  "context": {
+   "uuid": "207b32f3-a2ba-47cc-86d7-ed7e7c6de414",
+   "name": "overlord",
+   "customer": "example_customer"
+  },
+  "success": true,
+  "output": {
+   "mytest": {
+    "applications": [
+     {
+      "name_expr": "^.*ubuntu.*$",
+      "dist_upgrade": "true",
+      "packages_to_update": [
+       {
+        "package": "nova-common",
+        "version": "2:21.2.4-0ubuntu2.1"
+       },
+       {
+        "package": "python3-nova",
+        "version": "2:21.2.4-0ubuntu2.1"
+       }
+      ],
+      "results": []
+     },
+     {
+      "name_expr": "^.*nova-cloud-controller.*$",
+      "dist_upgrade": false,
+      "packages_to_update": [
+       {
+        "package": "nova-common",
+        "version": "2:21.2.4-0ubuntu2.1"
+       },
+       {
+        "package": "python3-nova",
+        "version": "2:21.2.4-0ubuntu2.1"
+       }
+      ],
+      "results": [
+       {
+        "units": [
+         {
+          "unit": "nova-cloud-controller/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y nova-common python3-nova ",
+          "raw_output": "Hit:1 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:2 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nGet:3 http://archive.ubuntu.com/ubuntu focal-backports InRelease [108 kB]\nGet:4 http://security.ubuntu.com/ubuntu focal-security InRelease [114 kB]\nFetched 222 kB in 1s (240 kB/s)\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\nnova-common is already the newest version (2:21.2.4-0ubuntu2.2).\npython3-nova is already the newest version (2:21.2.4-0ubuntu2.2).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "nova-cloud-controller"
+       },
+       {
+        "units": [
+         {
+          "unit": "nova-cloud-controller-mysql-router/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y nova-common python3-nova ",
+          "raw_output": "Get:1 http://security.ubuntu.com/ubuntu focal-security InRelease [114 kB]\nHit:2 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:3 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nGet:4 http://archive.ubuntu.com/ubuntu focal-backports InRelease [108 kB]\nFetched 222 kB in 1s (194 kB/s)\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\nnova-common is already the newest version (2:21.2.4-0ubuntu2.2).\npython3-nova is already the newest version (2:21.2.4-0ubuntu2.2).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "nova-cloud-controller-mysql-router"
+       }
+      ]
+     },
+     {
+      "name_expr": "^.*glance.*$",
+      "dist_upgrade": false,
+      "packages_to_update": [
+       {
+        "package": "glance-common",
+        "version": "2:20.2.0-0ubuntu1.1"
+       },
+       {
+        "package": "python3-glance",
+        "version": "2:20.2.0-0ubuntu1.1"
+       }
+      ],
+      "results": [
+       {
+        "units": [
+         {
+          "unit": "glance/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y glance-common python3-glance ",
+          "raw_output": "Hit:1 http://security.ubuntu.com/ubuntu focal-security InRelease\nHit:2 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:3 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nHit:4 http://archive.ubuntu.com/ubuntu focal-backports InRelease\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\nglance-common is already the newest version (2:20.2.0-0ubuntu1.1).\npython3-glance is already the newest version (2:20.2.0-0ubuntu1.1).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "glance"
+       },
+       {
+        "units": [
+         {
+          "unit": "glance-mysql-router/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y glance-common python3-glance ",
+          "raw_output": "Hit:1 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:2 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nHit:3 http://security.ubuntu.com/ubuntu focal-security InRelease\nHit:4 http://archive.ubuntu.com/ubuntu focal-backports InRelease\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\nglance-common is already the newest version (2:20.2.0-0ubuntu1.1).\npython3-glance is already the newest version (2:20.2.0-0ubuntu1.1).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "glance-mysql-router"
+       }
+      ]
+     },
+     {
+      "name_expr": "^.*cinder.*$",
+      "dist_upgrade": false,
+      "packages_to_update": [
+       {
+        "package": "cinder-common",
+        "version": "2:16.4.2-0ubuntu2.1"
+       },
+       {
+        "package": "python3-cinder",
+        "version": "2:16.4.2-0ubuntu2.1"
+       }
+      ],
+      "results": [
+       {
+        "units": [
+         {
+          "unit": "cinder/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y cinder-common python3-cinder ",
+          "raw_output": "Hit:1 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:2 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nHit:3 http://archive.ubuntu.com/ubuntu focal-backports InRelease\nHit:4 http://security.ubuntu.com/ubuntu focal-security InRelease\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\ncinder-common is already the newest version (2:16.4.2-0ubuntu2.2).\npython3-cinder is already the newest version (2:16.4.2-0ubuntu2.2).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "cinder"
+       },
+       {
+        "units": [
+         {
+          "unit": "cinder-mysql-router/0",
+          "command": "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::Options::=--force-confdef install --upgrade -y cinder-common python3-cinder ",
+          "raw_output": "Hit:1 http://archive.ubuntu.com/ubuntu focal InRelease\nHit:2 http://security.ubuntu.com/ubuntu focal-security InRelease\nHit:3 http://archive.ubuntu.com/ubuntu focal-updates InRelease\nHit:4 http://archive.ubuntu.com/ubuntu focal-backports InRelease\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\ncinder-common is already the newest version (2:16.4.2-0ubuntu2.2).\npython3-cinder is already the newest version (2:16.4.2-0ubuntu2.2).\n0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.\n",
+          "packages": [],
+          "success": false
+         }
+        ],
+        "application": "cinder-mysql-router"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "error": null
+ }
+]
