@@ -1,14 +1,37 @@
-dist/
-build/
-juju_spell.egg-info/
-*.pyc
-*.snap
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Tests files and dir
+.pytest_cache/
 .coverage
-.tox/
-report/
-config.yaml
-.history/**
-.idea
-.project
-.pydevproject
+.tox
+.venv
+.mypy_cache
+reports/
+htmlcov/
+
+# Log files
+*.log
+
+# IDEs
+.idea/
+.vscode/
+
+# vi
+.*.swp
+
+# version data
+repo-info
+
+# Python builds
+deb_dist/
+dist/
+
+# Snaps
+*.snap
+
+# Builds
+.build/
+build/
