@@ -133,20 +133,7 @@ class UpdatePackages(BaseJujuCommand):
         lines = result.splitlines()
         packages: List[PackageUpdateResult] = []
         for line in lines:
-            # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1 Ubuntu:22.04/jammy-updates [amd64]) # noqa
-            to_version = ""
-            from_version = ""
-            name = ""
-            if line.startswith("Inst "):
-                _, name, from_version, to_version, *others = line.split(" ")
-
-            # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
-            elif line.startswith("Unpacking"):
-                _, name, to_version, _, from_version, *others = line.split(" ")
-
-            to_version = to_version.strip("()[]")
-            from_version = from_version.strip("()[]")
-            name = name.strip(" ")
+            from_version, name, to_version = self.parse_line(line)
             if from_version != "" and to_version != "" and name != "":
                 packages.append(
                     PackageUpdateResult(
@@ -155,6 +142,22 @@ class UpdatePackages(BaseJujuCommand):
                 )
 
         return packages
+
+    def parse_line(self, line):
+        # Inst libdrm2 [2.4.110-1ubuntu1] (2.4.113-2~ubuntu0.22.04.1 Ubuntu:22.04/jammy-updates [amd64]) # noqa
+        to_version = ""
+        from_version = ""
+        name = ""
+        if line.startswith("Inst "):
+            _, name, from_version, to_version, *others = line.split(" ")
+
+        # Unpacking software-properties-common (0.99.9.11) over (0.99.9.10)
+        elif line.startswith("Unpacking"):
+            _, name, to_version, _, from_version, *others = line.split(" ")
+        to_version = to_version.strip("()[]")
+        from_version = from_version.strip("()[]")
+        name = name.strip(" ")
+        return from_version, name, to_version
 
     def get_update_command(self, app: Application, dry_run: bool):
         """Generate command according to flags."""
