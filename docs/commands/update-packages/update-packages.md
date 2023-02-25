@@ -85,7 +85,7 @@ applications:
 ## Result
 [sample](update_packages-retval.json)
 
-```json
+```javascript
 [
  {
   "context": { ... },
