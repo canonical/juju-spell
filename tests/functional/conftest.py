@@ -72,9 +72,7 @@ def pytest_addoption(parser):
         default=DEFAULT_SERIES,
         help="create lxd controllers with series",
     )
-    parser.addoption(
-        "--no-build", action="store_false", help="flag to disable building new snap"
-    )
+    parser.addoption("--no-build", action="store_false", help="flag to disable building new snap")
     parser.addoption(
         "--keep-env",
         action="store_false",
@@ -131,9 +129,7 @@ def juju_spell_run(client) -> Callable:
     """Return Callable function to execute JujuSpell command."""
 
     def wrapper(*args):
-        result = client.execute(
-            ["juju-spell", *args], user=1000, group=1000, cwd="/home/ubuntu"
-        )
+        result = client.execute(["juju-spell", *args], user=1000, group=1000, cwd="/home/ubuntu")
         print(
             f"LXD: command {args} finished with exit_code {result.exit_code}"
             f"{os.linesep}stdout: {result.stdout}{os.linesep}stderr: {result.stderr}"

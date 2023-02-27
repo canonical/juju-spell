@@ -75,13 +75,9 @@ class ConnectManager(object):
         """Prepare connection to Controller and return it."""
         logger.info("getting a new connection to controller %s", controller_config.name)
         controller = juju.Controller(max_frame_size=DEFUALT_MAX_FRAME_SIZE)
-        controller_endpoint, connection_process = get_connection(
-            controller_config, sshuttle
-        )
+        controller_endpoint, connection_process = get_connection(controller_config, sshuttle)
         connection_process.connect()
-        self.connections[controller_config.name] = Connection(
-            controller, connection_process
-        )
+        self.connections[controller_config.name] = Connection(controller, connection_process)
         await build_controller_conn(
             controller,
             uuid=controller_config.uuid,
@@ -101,9 +97,7 @@ class ConnectManager(object):
             connection = self.connections[name]
             await connection.controller.disconnect()  # disconnect controller
             connection.connection_process.clean()  # clean connection process
-            logger.info(
-                "%s connection was closed", connection.controller.controller_uuid
-            )
+            logger.info("%s connection was closed", connection.controller.controller_uuid)
 
         self.connections.clear()
 
@@ -120,9 +114,7 @@ class ConnectManager(object):
 
         connection = self.connections.get(controller_config.name)
         if connection and connection.controller.is_connected() and not reconnect:
-            logger.info(
-                "%s using controller from cache", connection.controller.controller_uuid
-            )
+            logger.info("%s using controller from cache", connection.controller.controller_uuid)
             return connection.controller
         elif connection and reconnect:
             await connection.controller.disconnect()

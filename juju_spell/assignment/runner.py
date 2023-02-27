@@ -87,9 +87,7 @@ async def run_batch(
     raise NotImplementedError("running in batches is not yet supported")
 
 
-async def run(
-    config: Config, command: BaseJujuCommand, parsed_args: Namespace
-) -> RESULTS_TYPE:
+async def run(config: Config, command: BaseJujuCommand, parsed_args: Namespace) -> RESULTS_TYPE:
     try:
         run_type = parsed_args.run_type
         logger.info("running with run_type: %s", run_type)

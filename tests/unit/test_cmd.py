@@ -23,14 +23,10 @@ def test_run_dispatcher(mock_load_config, mock_emit, mock_sys, cli_args):
     """Test run dispatcher."""
     mock_sys.argv = ["juju-spell", *cli_args]
 
-    dispatcher = Dispatcher(
-        APP_NAME, get_command_groups(), extra_global_args=GLOBAL_ARGS
-    )
+    dispatcher = Dispatcher(APP_NAME, get_command_groups(), extra_global_args=GLOBAL_ARGS)
     dispatcher.load_command = mock.MagicMock()
     dispatcher.run = mock.MagicMock()
-    args, filtered_params = dispatcher._parse_options(
-        dispatcher.global_arguments, cli_args
-    )
+    args, filtered_params = dispatcher._parse_options(dispatcher.global_arguments, cli_args)
 
     _run_dispatcher(dispatcher)
 

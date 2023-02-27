@@ -38,9 +38,7 @@ def test_get_free_tcp_port(mock_random_shuffle, mock_is_port_free):
     port = get_free_tcp_port(range(17071, 17075))
 
     mock_random_shuffle.assert_called_once_with([17071, 17072, 17073, 17074])
-    mock_is_port_free.assert_has_calls(
-        [mock.call(17071), mock.call(17072), mock.call(17073)]
-    )
+    mock_is_port_free.assert_has_calls([mock.call(17071), mock.call(17072), mock.call(17073)])
     assert port == exp_port
 
 
@@ -143,9 +141,7 @@ class BaseSubprocessConnectionTestCase(unittest.TestCase):
         ),
     ],
 )
-@mock.patch(
-    "juju_spell.connections.network.subprocess.Popen", return_value=mock.MagicMock
-)
+@mock.patch("juju_spell.connections.network.subprocess.Popen", return_value=mock.MagicMock)
 def test_ssh_port_forwarding_proc_connect(mock_popen, args, exp_cmd):
     """Test create ssh tune for port forwarding."""
     mock_popen.return_value = mock_process = mock.MagicMock()
@@ -156,9 +152,7 @@ def test_ssh_port_forwarding_proc_connect(mock_popen, args, exp_cmd):
     ssh_portforward.connect()
 
     assert ssh_portforward.is_connected is True
-    mock_popen.assert_called_once_with(
-        exp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    mock_popen.assert_called_once_with(exp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 @pytest.mark.parametrize(
@@ -189,9 +183,7 @@ def test_sshuttle_proc(mock_popen, args, exp_cmd):
     sshuttle = SshuttleSubprocess(*args)
     sshuttle.connect()
 
-    mock_popen.assert_called_once_with(
-        exp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    mock_popen.assert_called_once_with(exp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 @pytest.mark.parametrize(

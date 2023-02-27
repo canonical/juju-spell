@@ -40,9 +40,9 @@ def make_controllers_filter(filter_expression):
                 and len(serialize(target_val) & serialize(values)) <= 0
             ):
                 return False
-            if isinstance(target_val, str) and asdict(controller).get(
-                key
-            ) not in serialize(values):
+            if isinstance(target_val, str) and asdict(controller).get(key) not in serialize(
+                values
+            ):
                 return False
         return True
 

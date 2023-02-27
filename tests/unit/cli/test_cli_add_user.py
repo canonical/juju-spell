@@ -41,7 +41,4 @@ def test_add_user_cmd_format_output(retval, excepted_leading_word, excepted_data
     output = AddUserCMD.format_output(retval)
     assert excepted_leading_word in output
 
-    assert (
-        yaml.safe_load(output.replace(excepted_leading_word, "").strip())
-        == excepted_data
-    )
+    assert yaml.safe_load(output.replace(excepted_leading_word, "").strip()) == excepted_data

@@ -156,15 +156,11 @@ class SshPortForwardSubprocess(BaseSubprocessConnection):
             cmd.append(" ".join(f"-J {jump}" for jump in self.jumps))
 
         logger.debug("cmd `%s` will be executed", cmd)
-        self.process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 class SshuttleSubprocess(BaseSubprocessConnection):
-    def __init__(
-        self, subnets: List[str], destination: str, jumps: Optional[List[str]] = None
-    ):
+    def __init__(self, subnets: List[str], destination: str, jumps: Optional[List[str]] = None):
         """Configure Sshuttle subprocess.
 
         Example:
@@ -204,9 +200,7 @@ class SshuttleSubprocess(BaseSubprocessConnection):
             cmd.append(f"-e 'ssh {jumps_option}'")
 
         logger.debug("cmd `%s` will be executed", cmd)
-        self.process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def get_connection(

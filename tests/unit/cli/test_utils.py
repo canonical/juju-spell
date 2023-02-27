@@ -93,9 +93,7 @@ def test_parse_comma_separated_str(string, exp_list):
     assert result == exp_list
 
 
-@pytest.mark.parametrize(
-    "value", ["a=1", "a=1,b=2,c='Gandalf'", "a=v1,v2,v3 b=v4,v5,v6"]
-)
+@pytest.mark.parametrize("value", ["a=1", "a=1,b=2,c='Gandalf'", "a=v1,v2,v3 b=v4,v5,v6"])
 def test_parse_filter(value):
     """Test parse_filter with valid format."""
     result = parse_filter(value)

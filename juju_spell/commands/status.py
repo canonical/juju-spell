@@ -20,9 +20,7 @@ class StatusCommand(BaseJujuCommand):
             model_mappings=kwargs["controller_config"].model_mapping,
         ):
             status = await model.get_status()
-            self.logger.debug(
-                "%s model %s status: %s", controller.controller_uuid, name, status
-            )
+            self.logger.debug("%s model %s status: %s", controller.controller_uuid, name, status)
             output[name] = status
 
         return output

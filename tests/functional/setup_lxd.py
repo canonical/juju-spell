@@ -57,9 +57,7 @@ def get_controller(name: str) -> Dict[str, Any]:
     return json.loads(output)
 
 
-def lxd_execute(
-    container: Instance, cmd: List[str], root: bool = False
-) -> _InstanceExecuteResult:
+def lxd_execute(container: Instance, cmd: List[str], root: bool = False) -> _InstanceExecuteResult:
     """Execute on container."""
     kwargs = {}
     command = " ".join(cmd)
@@ -143,13 +141,9 @@ def create_client_instance(
     lxd_execute(client, ["sudo", "ufw", "enable"])
     # drop direct connection to any controller, e.g. <ip>:CONTROLLER_API_PORT
     lxd_execute(client, ["sudo", "ufw", "deny", "out", str(CONTROLLER_API_PORT)])
-    lxd_execute(
-        client, ["ssh-keygen", "-q", "-f", "/home/ubuntu/.ssh/id_rsa", "-N", ""]
-    )
+    lxd_execute(client, ["ssh-keygen", "-q", "-f", "/home/ubuntu/.ssh/id_rsa", "-N", ""])
     with open(snap_path, "rb") as snap:
-        client.files.put(
-            "/home/ubuntu/juju-spell.snap", snap.read(), uid=1000, gid=1000
-        )
+        client.files.put("/home/ubuntu/juju-spell.snap", snap.read(), uid=1000, gid=1000)
 
     lxd_execute(client, ["sudo", "snap", "install", "./juju-spell.snap", "--devmode"])
     # NOTE (rgildein): Right now JujuSpell is not creating `.local/share/juju-spell`
@@ -178,17 +172,13 @@ def boostrap_controller(name: str, series: str, ssh_key: str) -> Instance:
             name,
         ]
     )
-    info = subprocess.check_output(
-        ["juju", "show-controller", name, "--format", "json"]
-    ).decode()
+    info = subprocess.check_output(["juju", "show-controller", name, "--format", "json"]).decode()
     info = json.loads(info)
     instance_id = info[name]["controller-machines"]["0"]["instance-id"]
     client = Client()
     # ranme controller container so we can easily access it a remove it later
     controller = client.instances.get(instance_id)
-    lxd_execute(
-        controller, ["sh", "-c", f"echo '{ssh_key}'>>/home/ubuntu/.ssh/authorized_keys"]
-    )
+    lxd_execute(controller, ["sh", "-c", f"echo '{ssh_key}'>>/home/ubuntu/.ssh/authorized_keys"])
     controller.stop(wait=True)
     controller.rename(name, wait=True)
     controller.start(wait=True)
@@ -204,9 +194,7 @@ def setup_environment(
     """
     # JujuSpell client
     client = create_client_instance(session_uuid, series, snap_path)  # JujuSpell client
-    client_ssh_key = lxd_execute(
-        client, ["cat", "/home/ubuntu/.ssh/id_rsa.pub"]
-    ).stdout.strip()
+    client_ssh_key = lxd_execute(client, ["cat", "/home/ubuntu/.ssh/id_rsa.pub"]).stdout.strip()
     # Note(rgildein): Right now our connection could not accept ssh key
     # automaticaly, that's why we need to do this
     client.files.put("/home/ubuntu/.ssh/config", SSH_CONFIG, uid=1000)
@@ -232,9 +220,7 @@ def setup_environment(
             }
         )
     config_string = yaml.safe_dump(config)
-    client.files.put(
-        DEFAULT_DIRECTORY / "config.yaml", config_string, uid=1000, gid=1000
-    )
+    client.files.put(DEFAULT_DIRECTORY / "config.yaml", config_string, uid=1000, gid=1000)
 
     return client.name, controllers
 

@@ -89,10 +89,7 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
             "--dry-run",
             default=False,
             action="store_true",
-            help=(
-                "This will only run pre-check and dry-run only instead of real"
-                " execution."
-            ),
+            help=("This will only run pre-check and dry-run only instead of real execution."),
         )
 
 

@@ -38,9 +38,7 @@ API_ENDPOINT_REGEX = (
     r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # IP
     r"(:\d+)?$"  # port
 )
-UUID_REGEX = (
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-)
+UUID_REGEX = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 CA_CERT_REGEX = r"^(-*)BEGIN CERTIFICATE(-*)\n((.|\n)*)\n(-*)END CERTIFICATE(-*)$"
 SUBNET_REGEX = r"^([0-9]{1,3}\.){3}[0-9]{1,3}($|/(8|9|1[0-9]|2[0-9]|3[0-2]))$"
 DESTINATION_REGEX = (
@@ -136,17 +134,11 @@ JUJUSPELL_CONTROLLER_TEMPLATE = ControllerDict(
             ConnectionDict(
                 {
                     "subnets": confuse.Optional(
-                        confuse.Sequence(
-                            String(SUBNET_REGEX, "Invalid subnet definition")
-                        )
+                        confuse.Sequence(String(SUBNET_REGEX, "Invalid subnet definition"))
                     ),
-                    "destination": String(
-                        DESTINATION_REGEX, "Invalid destination definition"
-                    ),
+                    "destination": String(DESTINATION_REGEX, "Invalid destination definition"),
                     "jumps": confuse.Optional(
-                        confuse.Sequence(
-                            String(DESTINATION_REGEX, "Invalid jump definition")
-                        )
+                        confuse.Sequence(String(DESTINATION_REGEX, "Invalid jump definition"))
                     ),
                     "port_range": confuse.Optional(
                         PortRange(
@@ -436,9 +428,7 @@ def load_config_file(path):
         raise JujuSpellError("configuration file validation failed") from error
 
 
-def load_config(
-    config_path: Path, personal_config_path: Optional[Path] = None
-) -> Config:
+def load_config(config_path: Path, personal_config_path: Optional[Path] = None) -> Config:
     """Load ad validate yaml config file."""
     source = load_config_file(config_path)
     if personal_config_path and personal_config_path.exists():

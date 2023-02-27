@@ -71,9 +71,7 @@ class BaseJujuCommand(metaclass=ABCMeta):
                 "%s pre-check: controller is connected",
                 controller.controller_uuid,
             )
-            return Result(
-                False, error=f"controller {controller.controller_uuid} is not connected"
-            )
+            return Result(False, error=f"controller {controller.controller_uuid} is not connected")
 
     async def dry_run(self, controller: Controller, **kwargs) -> Optional[Result]:
         """Dry-run will output the necessary information of the target."""
@@ -108,9 +106,7 @@ class BaseJujuCommand(metaclass=ABCMeta):
         return False
 
     @abstractmethod
-    async def execute(
-        self, controller: Controller, *args, **kwargs
-    ) -> Any:  # pragma: no cover
+    async def execute(self, controller: Controller, *args, **kwargs) -> Any:  # pragma: no cover
         """Execute function.
 
         This part will be the main part function
@@ -122,9 +118,7 @@ class BaseJujuCommand(metaclass=ABCMeta):
         ...
 
 
-def _apply_model_mappings(
-    models: List[str], model_mappings: Dict[str, List[str]]
-) -> List[str]:
+def _apply_model_mappings(models: List[str], model_mappings: Dict[str, List[str]]) -> List[str]:
     """Replace the models with values from model_mappings.
 
     If --model parameter is provided searches the map for matching model, if found

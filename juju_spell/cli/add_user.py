@@ -70,10 +70,7 @@ class AddUserCMD(JujuWriteCMD):
         parser.add_argument(
             "--display_name",
             type=str,
-            help=(
-                "display_name to create. If display_name is None then it will be set"
-                "as user"
-            ),
+            help=("display_name to create. If display_name is None then it will be set as user"),
             required=False,
         )
         parser.add_argument(

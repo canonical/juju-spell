@@ -30,12 +30,8 @@ from juju_spell.settings import (
 )
 
 GLOBAL_ARGS = [
-    GlobalArgument(
-        "version", "flag", None, "--version", "Show the application version and exit"
-    ),
-    GlobalArgument(
-        "config", "option", "-c", "--config", "Set the path to custom config."
-    ),
+    GlobalArgument("version", "flag", None, "--version", "Show the application version and exit"),
+    GlobalArgument("config", "option", "-c", "--config", "Set the path to custom config."),
     GlobalArgument("cross-fingers", "flag", None, "--cross-fingers", argparse.SUPPRESS),
 ]
 
@@ -80,9 +76,7 @@ def get_verbosity() -> EmitterMode:
         try:
             verbosity = EmitterMode[verbosity_env.strip().upper()]
         except KeyError:
-            values = utils.humanize_list(
-                [e.name.lower() for e in EmitterMode], "and", sort=False
-            )
+            values = utils.humanize_list([e.name.lower() for e in EmitterMode], "and", sort=False)
             raise ArgumentParsingError(
                 f"cannot parse verbosity level {verbosity_env!r} from environment "
                 f"variable SNAPCRAFT_VERBOSITY_LEVEL (valid values are {values})"
@@ -124,9 +118,7 @@ def _run_dispatcher(dispatcher: Dispatcher) -> None:
     loaded with dispatcher and finally the dispatcher will be run.
     """
     # Check if -v or --version was provided
-    args, filtered_params = dispatcher._parse_options(
-        dispatcher.global_arguments, sys.argv[1:]
-    )
+    args, filtered_params = dispatcher._parse_options(dispatcher.global_arguments, sys.argv[1:])
     if args.get("version"):
         emit.message(f"JujuSpell: {APP_VERSION}")
         if not filtered_params:

@@ -44,9 +44,7 @@ def test_string(regex, value):
     assert string.convert(value, view) == value
 
 
-@pytest.mark.parametrize(
-    "regex, value", [(SUBNET_REGEX, "1.2"), (UUID_REGEX, "1-2-3-4-5")]
-)
+@pytest.mark.parametrize("regex, value", [(SUBNET_REGEX, "1.2"), (UUID_REGEX, "1-2-3-4-5")])
 def test_string_exception(regex, value):
     """Test custom string option."""
     string = String(regex, "test message")
@@ -195,16 +193,8 @@ def test_validate_config(extra_configuration, exp_controller, test_config_dict):
         {"controllers": [{"endpoint": "1.2.3"}]},
         {"controllers": [{"endpoint": "llocalhost"}]},
         {"controllers": [{"ca_cert": "1234"}]},
-        {
-            "controllers": [
-                {"connection": {"destination": "1.2.3.4", "subnets": ["1.2.3.4/00"]}}
-            ]
-        },
-        {
-            "controllers": [
-                {"connection": {"destination": "1.2.3.4", "subnets": ["1.2"]}}
-            ]
-        },
+        {"controllers": [{"connection": {"destination": "1.2.3.4", "subnets": ["1.2.3.4/00"]}}]},
+        {"controllers": [{"connection": {"destination": "1.2.3.4", "subnets": ["1.2"]}}]},
         {"controllers": [{"connection": {"destination": "1.2.3.4", "jumps": [None]}}]},
     ],
 )
@@ -246,9 +236,7 @@ def test_validate_config_failure(extra_configuration, test_config_dict):
         ),
     ],
 )
-def test_config_match_template(
-    extra_configuration, template, exp_error, test_config_dict
-):
+def test_config_match_template(extra_configuration, template, exp_error, test_config_dict):
     """Test if config match template."""
     test_config = _update_test_config(test_config_dict, extra_configuration)
     if exp_error:
@@ -369,9 +357,7 @@ def test_load_config_file_exception(mock_open, tmp_path, raised_error, exp_error
 @mock.patch("juju_spell.config._validate_config")
 @mock.patch("juju_spell.config.merge_configs")
 @mock.patch("juju_spell.config.load_config_file")
-def test_load_config(
-    mock_load_config_file, mock_merge_configs, mock_validate_config, tmp_path
-):
+def test_load_config(mock_load_config_file, mock_merge_configs, mock_validate_config, tmp_path):
     """Test load config."""
     test_config_path = tmp_path / "config.yaml"
     test_config_path.touch()

@@ -100,9 +100,7 @@ class TestConnectManager(unittest.IsolatedAsyncioTestCase):
         exp_endpoint = "localhost:17071"
 
         mocked_controller = mock_controller.return_value = AsyncMock()
-        with mock.patch(
-            "juju_spell.connections.manager.get_connection"
-        ) as mock_get_connection:
+        with mock.patch("juju_spell.connections.manager.get_connection") as mock_get_connection:
             mock_get_connection.return_value = exp_endpoint, MagicMock()
             controller = await self.connect_manager._connect(config)
             mock_get_connection.assert_called_once_with(config, False)

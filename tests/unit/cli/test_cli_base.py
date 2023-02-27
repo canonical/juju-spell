@@ -113,9 +113,7 @@ def test_base_juju_cmd_fill_parser(
                     '"a=1,2,3 b=4,5,6". '
                 ),
             ),
-            mock.call(
-                "--models", type=mock_parse_comma_separated_str, help="model filter"
-            ),
+            mock.call("--models", type=mock_parse_comma_separated_str, help="model filter"),
         ]
     )
 
@@ -124,9 +122,7 @@ def test_base_juju_cmd_fill_parser(
 @patch("juju_spell.cli.base.run", new_callable=MagicMock)
 @patch("juju_spell.cli.base.asyncio")
 @patch("juju_spell.cli.base.get_filtered_config")
-async def test_base_juju_cmd_execute(
-    mock_get_filtered_config, mock_asyncio, _, base_juju_cmd
-):
+async def test_base_juju_cmd_execute(mock_get_filtered_config, mock_asyncio, _, base_juju_cmd):
     """Test add additional CLI arguments with BaseJujuCMD."""
     parsed_args = argparse.Namespace(**{"filter": None})
     mock_asyncio.get_event_loop.return_value = loop = MagicMock()
@@ -175,9 +171,7 @@ def _create_test_controller(name: str) -> Controller:
     ],
 )
 @patch("juju_spell.cli.base.BaseJujuCMD.run")
-def test_juju_write_cmd_run(
-    mock_run, parsed_args, confirm_return_value, executed, juju_write_cmd
-):
+def test_juju_write_cmd_run(mock_run, parsed_args, confirm_return_value, executed, juju_write_cmd):
     """Test BaseCMD run."""
     parsed_args = argparse.Namespace(**parsed_args)
     juju_write_cmd.safe_parsed_args_output = MagicMock()
