@@ -11,7 +11,7 @@ on:
 
 jobs:
   pr:
-    uses: canonical/bootstack-actions/.github/workflows/snap-pull-request.yaml
+    uses: canonical/bootstack-actions/.github/workflows/snap-pull-request.yaml@main
     secrets: inherit
     with:
       python-version-unit: "['3.8', '3.10']"
