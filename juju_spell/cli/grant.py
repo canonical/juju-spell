@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""CLI command to grant user privileges."""
 import textwrap
 
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -64,7 +65,7 @@ class GrantCMD(JujuWriteCMD):
             "--acl",
             type=str,
             choices=ACL_CHOICES,
-            help="Access control. e.g., {}.".format(",".join(ACL_CHOICES)),
+            help=f"Access control. e.g., {','.join(ACL_CHOICES)}.",
             default=False,
             required=True,
         )

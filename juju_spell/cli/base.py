@@ -20,7 +20,7 @@ import asyncio
 import json
 import os
 from abc import ABCMeta, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from craft_cli import BaseCommand, emit
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -36,10 +36,11 @@ from juju_spell.filter import get_filtered_config
 class BaseCMD(BaseCommand, metaclass=ABCMeta):
     """Base CLI command for handling contexts."""
 
-    def __init__(self, config: Optional[Config]) -> None:
+    def __init__(self, config: Config) -> None:
         """Initialize BaseCMD."""
-        self.config: Optional[Config] = None  # to overwrite config type hinting
-        super().__init__(config)
+        super().__init__(config=None)
+        # overwrite config in BaseCommand
+        self.config: Config = config  # type: ignore
 
     def run(self, parsed_args: argparse.Namespace) -> Optional[int]:
         """Execute CLI command.
@@ -66,7 +67,6 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
         """Pretty formatter for output."""
         emit.debug(f"formatting `{retval}`")
         if isinstance(retval, (dict, list)):
-            # TODO: add support for table, yaml, ... format
             return json.dumps(retval, default=vars, indent=1)
 
         return str(retval)
@@ -74,15 +74,12 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
     @abstractmethod
     def execute(self, parsed_args: argparse.Namespace) -> Any:  # pragma: no cover
         """Abstract function need to be defined for each JujuSpell CLI command."""
-        ...
 
     def before(self, parsed_args: argparse.Namespace) -> None:  # pragma: no cover
         """Run before execution."""
-        ...
 
     def after(self, parsed_args: argparse.Namespace) -> None:  # pragma: no cover
         """Run after execution."""
-        ...
 
     def fill_parser(self, parser: _CustomArgumentParser) -> None:
         parser.add_argument(
@@ -96,10 +93,7 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
 class BaseJujuCMD(BaseCMD, metaclass=ABCMeta):
     """Base CLI command for handling any Juju commands."""
 
-    @property
-    @abstractmethod
-    def command(self):  # pragma: no cover
-        ...
+    command: Type[BaseJujuCommand]
 
     def fill_parser(self, parser: _CustomArgumentParser) -> None:
         """Define base arguments for Juju commands.

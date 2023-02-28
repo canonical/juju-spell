@@ -17,20 +17,19 @@
 """Unilities."""
 import re
 import sys
-import typing as t
 from argparse import ArgumentTypeError
 from gettext import gettext
-from typing import List
+from typing import Callable, List
 
 from craft_cli import emit
 
 from juju_spell.exceptions import Abort, JujuSpellError
 from juju_spell.filter import FILTER_EXPRESSION_REGEX
 
-visible_prompt_func: t.Callable[[str], str] = input
+visible_prompt_func: Callable[[str], str] = input
 
 
-def _get_value_from_prompt(prompt) -> str:
+def _get_value_from_prompt(prompt: str) -> str:
     """Get value from prompt."""
     try:
         with emit.pause():
@@ -73,7 +72,7 @@ def confirm(
     while True:
         value = _get_value_from_prompt(prompt).lower()
 
-        if not value:
+        if not value:  # pylint: disable=R1705
             return default
         elif value in ("y", "yes"):
             return True

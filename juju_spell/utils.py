@@ -70,7 +70,7 @@ def humanize_list(
     return f"{humanized} {conjunction} {quoted_items[-1]}"
 
 
-def merge_list_of_dict_by_key(key: str, lists: List[List[Dict]]):
+def merge_list_of_dict_by_key(key: str, lists: List[List[Dict]]) -> List:
     """Merge multiple list of dict by key.
 
     Example:
@@ -93,6 +93,6 @@ def merge_list_of_dict_by_key(key: str, lists: List[List[Dict]]):
     return list(new_dict.values())
 
 
-def random_password(length: int = 30):
+def random_password(length: int = 30) -> str:
     """Generate random password."""
     return secrets.token_urlsafe(length)

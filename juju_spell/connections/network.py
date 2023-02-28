@@ -1,3 +1,4 @@
+"""Module handling connection to remote cloud."""
 import abc
 import logging
 import random
@@ -36,11 +37,12 @@ def get_free_tcp_port(port_range: range) -> int:
 
 
 class BaseConnection(metaclass=abc.ABCMeta):
+    """Base connection."""
+
     @property
     @abc.abstractmethod
     def is_connected(self) -> bool:  # pragma: no cover
         """Return True if connection is alive."""
-        ...
 
     @abc.abstractmethod
     def connect(self) -> None:  # pragma: no cover
@@ -48,18 +50,16 @@ class BaseConnection(metaclass=abc.ABCMeta):
 
         This function is responsible for any port-forwarding, sshuttle tunnelling, etc.
         """
-        ...
 
     @abc.abstractmethod
     def clean(self) -> None:  # pragma: no cover
         """Clean/terminate/close connection."""
-        ...
 
 
 class EmptyConnection(BaseConnection):
     """Empty connection for controller with direct access."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the connection."""
         self._connected = False
 
@@ -75,7 +75,9 @@ class EmptyConnection(BaseConnection):
 
 
 class BaseSubprocessConnection(BaseConnection):
-    def __init__(self):
+    """Base connection using subprocess."""
+
+    def __init__(self) -> None:
         """Define empty process."""
         self.process: Optional[subprocess.Popen] = None
 
@@ -97,6 +99,8 @@ class BaseSubprocessConnection(BaseConnection):
 
 
 class SshPortForwardSubprocess(BaseSubprocessConnection):
+    """Shh port-forwarding connection with usage of subprocess."""
+
     def __init__(
         self,
         local_target: str,
@@ -156,10 +160,13 @@ class SshPortForwardSubprocess(BaseSubprocessConnection):
             cmd.append(" ".join(f"-J {jump}" for jump in self.jumps))
 
         logger.debug("cmd `%s` will be executed", cmd)
+        # pylint: disable=R1732
         self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 class SshuttleSubprocess(BaseSubprocessConnection):
+    """Sshuttle connection with usage of subprocess."""
+
     def __init__(self, subnets: List[str], destination: str, jumps: Optional[List[str]] = None):
         """Configure Sshuttle subprocess.
 
@@ -200,6 +207,7 @@ class SshuttleSubprocess(BaseSubprocessConnection):
             cmd.append(f"-e 'ssh {jumps_option}'")
 
         logger.debug("cmd `%s` will be executed", cmd)
+        # pylint: disable=R1732
         self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -209,9 +217,11 @@ def get_connection(
 ) -> Tuple[str, BaseConnection]:
     """Get connection."""
     controller_endpoint = controller_config.endpoint
-    process = EmptyConnection()  # controller has direct access
+    process: BaseConnection = EmptyConnection()  # controller has direct access
 
-    if controller_config.connection and not sshuttle:
+    if not controller_config.connection:
+        logger.debug("skip, due missing connection in the configuration")
+    elif not sshuttle:
         port = get_free_tcp_port(controller_config.connection.port_range)
         controller_endpoint = f"localhost:{port}"
         process = SshPortForwardSubprocess(
@@ -220,7 +230,7 @@ def get_connection(
             controller_config.connection.destination,
             controller_config.connection.jumps,
         )
-    elif controller_config.connection and sshuttle:
+    elif sshuttle and controller_config.connection.subnets:
         process = SshuttleSubprocess(
             controller_config.connection.subnets,
             controller_config.connection.destination,

@@ -17,11 +17,11 @@ from juju_spell.connections import connect_manager, get_controller
 
 logger = logging.getLogger(__name__)
 
-RESULT_TYPE = Dict[str, Dict[str, Any]]
-RESULTS_TYPE = List[RESULT_TYPE]
+ResultType = Dict[str, Dict[str, Any]]
+ResultsType = List[ResultType]
 
 
-def get_result(controller_config: Controller, output: Result) -> RESULT_TYPE:
+def get_result(controller_config: Controller, output: Result) -> ResultType:
     """Get command result."""
     return {
         "context": {
@@ -35,7 +35,7 @@ def get_result(controller_config: Controller, output: Result) -> RESULT_TYPE:
 
 async def run_parallel(
     config: Config, command: BaseJujuCommand, parsed_args: Namespace
-) -> RESULTS_TYPE:
+) -> ResultsType:
     """Run controller target command in parallel.
 
     THIS FUNCTION IS NOT YET SUPPORTED.
@@ -45,7 +45,7 @@ async def run_parallel(
 
 async def run_serial(
     config: Config, command: BaseJujuCommand, parsed_args: Namespace
-) -> RESULTS_TYPE:
+) -> ResultsType:
     """Run controller target command serially.
 
     Parameters:
@@ -55,7 +55,7 @@ async def run_serial(
     Returns:
         results(Dict): Controller dict with result.
     """
-    results: RESULTS_TYPE = []
+    results: ResultsType = []
     for controller_config in config.controllers:
         controller = await get_controller(controller_config)
         logger.debug("%s running in serial", controller.controller_uuid)
@@ -79,7 +79,7 @@ async def run_serial(
 
 async def run_batch(
     config: Config, command: BaseJujuCommand, parsed_args: Namespace
-) -> RESULTS_TYPE:
+) -> ResultsType:
     """Run controller target command in batches.
 
     THIS FUNCTION IS NOT YET SUPPORTED.
@@ -87,7 +87,8 @@ async def run_batch(
     raise NotImplementedError("running in batches is not yet supported")
 
 
-async def run(config: Config, command: BaseJujuCommand, parsed_args: Namespace) -> RESULTS_TYPE:
+async def run(config: Config, command: BaseJujuCommand, parsed_args: Namespace) -> ResultsType:
+    """Run command on controllers."""
     try:
         run_type = parsed_args.run_type
         logger.info("running with run_type: %s", run_type)

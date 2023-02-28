@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""Helper script to generate configuration file from remote clouds."""
+# pylint: skip-file
+# mypy: ignore-errors
 
 import os
 import subprocess

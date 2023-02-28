@@ -1,3 +1,4 @@
+"""Module for managing connection to controllers."""
 import dataclasses
 import logging
 from typing import Dict, Union
@@ -7,13 +8,15 @@ from juju import juju
 from juju_spell.config import Controller
 from juju_spell.connections.conn_builder import build_controller_conn
 from juju_spell.connections.network import BaseConnection, get_connection
-from juju_spell.settings import DEFUALT_MAX_FRAME_SIZE
+from juju_spell.settings import DEFAULT_MAX_FRAME_SIZE
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
 class Connection:
+    """Representation of connection."""
+
     controller: juju.Controller
     connection_process: BaseConnection
 
@@ -23,7 +26,7 @@ def _get_wait_time(attempt: int, retry_backoff: Union[int, float]) -> float:
     return retry_backoff ** (attempt - 2)  # exponential wait y^(x-2)
 
 
-class ConnectManager(object):
+class ConnectManager:
     """Connect manager is used to define connections for controllers.
 
     Usage
@@ -56,10 +59,10 @@ class ConnectManager(object):
     """
 
     _manager = None
-    _connections = {}
+    _connections: Dict[str, Connection] = {}
 
-    def __new__(cls):
-        if getattr(cls, "_manager") is None:
+    def __new__(cls) -> "ConnectManager":
+        if cls._manager is None:
             cls._manager = super(ConnectManager, cls).__new__(cls)
 
         return cls._manager
@@ -74,7 +77,7 @@ class ConnectManager(object):
     ) -> juju.Controller:
         """Prepare connection to Controller and return it."""
         logger.info("getting a new connection to controller %s", controller_config.name)
-        controller = juju.Controller(max_frame_size=DEFUALT_MAX_FRAME_SIZE)
+        controller = juju.Controller(max_frame_size=DEFAULT_MAX_FRAME_SIZE)
         controller_endpoint, connection_process = get_connection(controller_config, sshuttle)
         connection_process.connect()
         self.connections[controller_config.name] = Connection(controller, connection_process)
@@ -91,10 +94,9 @@ class ConnectManager(object):
         logger.info("controller %s was connected", controller.controller_name)
         return controller
 
-    async def clean(self):
+    async def clean(self) -> None:
         """Close all connections."""
-        for name in self.connections.keys():
-            connection = self.connections[name]
+        for connection in self.connections.values():
             await connection.controller.disconnect()  # disconnect controller
             connection.connection_process.clean()  # clean connection process
             logger.info("%s connection was closed", connection.controller.controller_uuid)
@@ -113,10 +115,11 @@ class ConnectManager(object):
         ), "Not supported format of controller config"
 
         connection = self.connections.get(controller_config.name)
+        controller = None
         if connection and connection.controller.is_connected() and not reconnect:
             logger.info("%s using controller from cache", connection.controller.controller_uuid)
-            return connection.controller
+            controller = connection.controller
         elif connection and reconnect:
             await connection.controller.disconnect()
 
-        return await self._connect(controller_config, sshuttle)
+        return controller or await self._connect(controller_config, sshuttle)

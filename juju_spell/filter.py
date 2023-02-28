@@ -1,7 +1,7 @@
 """Filter logic."""
 import re
-import typing as t
 from dataclasses import asdict
+from typing import Callable, Dict, List, Optional, Union
 
 from .config import Config, Controller
 
@@ -9,7 +9,7 @@ from .config import Config, Controller
 FILTER_EXPRESSION_REGEX = r"([A-Za-z]+)=([^=]+)(?:\s|$)"
 
 
-def make_controllers_filter(filter_expression):
+def make_controllers_filter(filter_expression: str) -> Callable:
     """Build filter func to config's controller.
 
     If the filter_str is "a=v1,v2,v3 b=v4,v5,v6"
@@ -18,21 +18,21 @@ def make_controllers_filter(filter_expression):
     and b in [v4,v5,v6].
     """
 
-    def serialize(values):
+    def serialize(values: Union[set, list, str]) -> set:
         if isinstance(values, str):
             return set(values.split(","))
         if isinstance(values, list):
             return set(values)
         return values
 
-    def filter(controller: Controller):
+    def _filter(controller: Controller) -> bool:
         """Filter controllers."""
-        controller_asdict = asdict(controller)
+        controller_asdict: Dict[str, Union[List[str], str]] = asdict(controller)
         for key, values in re.findall(
             FILTER_EXPRESSION_REGEX,
             filter_expression,
         ):
-            target_val: t.Union[t.List[str], str] = controller_asdict.get(key)
+            target_val: Optional[Union[List[str], str]] = controller_asdict.get(key)
             if not target_val:
                 return False
             if (
@@ -46,10 +46,11 @@ def make_controllers_filter(filter_expression):
                 return False
         return True
 
-    return filter
+    return _filter
 
 
 def get_filtered_config(config: Config, filter_expression: str) -> Config:
+    """Get filtered Config object."""
     if filter_expression == "":
         return config
 

@@ -12,8 +12,8 @@ from confuse import ConfigError, RootView
 
 from juju_spell.exceptions import JujuSpellError
 from juju_spell.settings import (
-    DEFAULT_CONNECTIN_TIMEOUT,
-    DEFAULT_CONNECTIN_WAIT,
+    DEFAULT_CONNECTION_TIMEOUT,
+    DEFAULT_CONNECTION_WAIT,
     DEFAULT_PORT_RANGE,
 )
 from juju_spell.utils import merge_list_of_dict_by_key
@@ -58,25 +58,44 @@ PORT_RANGE = (
 )
 
 
-class String(confuse.Template):
+class Regex(confuse.Template):
+    """A template used to validate string with regex and provide custom error."""
+
+    def __init__(
+        self,
+        pattern: str,
+        message: str,
+        return_type: Any,
+        default: Optional[str] = None,
+    ):
+        """Initialize the Regex object."""
+        super().__init__(default=default)
+        self._regex = re.compile(pattern)
+        self._message = message
+        self._return_type = return_type
+
+    def convert(self, value: Any, view: confuse.ConfigView) -> Any:
+        """Check that the value is valid url."""
+        if not isinstance(value, self._return_type) or re.match(self._regex, value) is None:
+            self.fail(self._message, view, True)
+
+        return self._return_type(value)
+
+
+class String(Regex):
     """A template used to validate string with regex and provide custom error."""
 
     def __init__(self, pattern: str, message: str, default: Optional[str] = None):
         """Initialize the String object."""
-        super(String, self).__init__(default=default)
-        self._regex = re.compile(pattern)
-        self._message = message
-
-    def convert(self, value: Any, view: confuse.ConfigView) -> str:
-        """Check that the value is valid url."""
-        if isinstance(value, str) and re.match(self._regex, value) is not None:
-            return value
-
-        self.fail(self._message, view, True)
+        super().__init__(pattern, message, str, default)
 
 
-class PortRange(String):
+class PortRange(Regex):
     """A template specific for port range."""
+
+    def __init__(self, pattern: str, message: str, default: Optional[str] = None):
+        """Initialize the String object."""
+        super().__init__(pattern, message, str, default)
 
     def convert(self, value: Any, view: confuse.ConfigView) -> range:
         """Check and convert port_range string to tuple."""
@@ -88,7 +107,11 @@ class PortRange(String):
 class ControllerDict(confuse.MappingTemplate):
     """Controller template."""
 
-    def value(self, view, template=None):
+    def value(
+        self,
+        view: confuse.ConfigView,
+        template: Optional[confuse.Template] = None,
+    ) -> "Controller":
         """Get Controller object from dict."""
         output = super().value(view, template)
         return Controller(**output)
@@ -97,14 +120,24 @@ class ControllerDict(confuse.MappingTemplate):
 class ConnectionDict(confuse.MappingTemplate):
     """Connection template."""
 
-    def value(self, view, template=None):
+    def value(
+        self,
+        view: confuse.ConfigView,
+        template: Optional[confuse.Template] = None,
+    ) -> "Connection":
         """Get Connection object from dict."""
         output = super().value(view, template)
         return Connection(**output)
 
 
 class RetryPolicyDict(confuse.MappingTemplate):
-    def value(self, view, template=None):
+    """Retry policy template."""
+
+    def value(
+        self,
+        view: confuse.ConfigView,
+        template: Optional[confuse.Template] = None,
+    ) -> "RetryPolicy":
         """Get RetryPolicy object from dict."""
         output = super().value(view, template)
         return RetryPolicy(**output)
@@ -265,20 +298,22 @@ class RetryPolicy:
     """ConnectionManager retry policy."""
 
     attempt: Optional[int] = 3
-    wait: Optional[int] = DEFAULT_CONNECTIN_WAIT
-    timeout: Optional[int] = DEFAULT_CONNECTIN_TIMEOUT
+    wait: Optional[int] = DEFAULT_CONNECTION_WAIT
+    timeout: Optional[int] = DEFAULT_CONNECTION_TIMEOUT
 
 
 @dataclasses.dataclass
 class Connection:
+    """Connection part of JujuSpell configuration."""
+
     destination: str
     jumps: Optional[List[str]] = None
     subnets: Optional[List[str]] = None
-    port_range: Optional[range] = DEFAULT_PORT_RANGE
+    port_range: range = DEFAULT_PORT_RANGE
 
 
 @dataclasses.dataclass
-class Controller:
+class Controller:  # pylint: disable=R0902
     """Juju Controller."""
 
     uuid: uuid.UUID
@@ -300,13 +335,18 @@ class Controller:
 
 @dataclasses.dataclass
 class Config:
+    """JujuSpell Config object.
+
+    This object contains list of Controllers objects.
+    """
+
     controllers: List[Controller]
 
 
 def validate_source_match_template(
     source: Dict[str, Any],
     template: confuse.MappingTemplate,
-) -> Config:
+) -> confuse.ConfigView:
     """Return valid config if source match template, else raise ConfigError."""
     try:
         _config = RootView([source])
@@ -326,7 +366,7 @@ def _validate_config(source: Dict[str, Any]) -> Config:
     return Config(**valid_config)
 
 
-def _apply_default_dict(source: Dict[Any, Any], default: Dict[Any, Any]):
+def _apply_default_dict(source: Dict, default: Dict) -> Dict:
     new_dict = source.copy()
     for k in default:
         target_val = source.get(k, default.get(k))
@@ -339,7 +379,8 @@ def _apply_default_dict(source: Dict[Any, Any], default: Dict[Any, Any]):
     return new_dict
 
 
-def _apply_default_list(source: List[Any], default):
+def _apply_default_list(source: List[Any], default: Any) -> List[Any]:
+    """Apply default values to list."""
     new_list = []
     for value in source:
         if isinstance(value, dict) and isinstance(default, dict):
@@ -382,18 +423,18 @@ def _apply_default(source: Dict[str, Any]) -> Dict[str, Any]:
     return source
 
 
-def merge_configs(config: Dict, personal_config: Dict):
+def merge_configs(config: Dict, personal_config: Dict) -> Dict:
     """Merge personal and global config."""
     # Merge default
-    config_defualt = config.get(DEFAULT_KEY, {})
-    personal_defualt = personal_config.get(DEFAULT_KEY, {})
+    config_default = config.get(DEFAULT_KEY, {})
+    personal_default = personal_config.get(DEFAULT_KEY, {})
 
     # Get set of all keys in default
-    default_keys = set().union(*[config_defualt, personal_defualt])
+    default_keys = set().union(*[config_default, personal_default])
     for key in default_keys:
         config[DEFAULT_KEY][key] = {
-            **config_defualt.get(key, {}),
-            **personal_defualt.get(key, {}),
+            **config_default.get(key, {}),
+            **personal_default.get(key, {}),
         }
 
     # Merge controllers by unique key uuid
@@ -405,15 +446,15 @@ def merge_configs(config: Dict, personal_config: Dict):
     return config
 
 
-def load_config_file(path):
+def load_config_file(path: Path) -> Dict:
     """Load config file.
 
     raises: IsADirectoryError if path is directory
-    raises: FileNotFoundError -> JujuSpellError if fies does not exist
+    raises: FileNotFoundError -> JujuSpellError if files does not exist
     raises: PermissionError -> JujuSpellError if user has no permission to path
     """
     try:
-        with open(path, "r") as file:
+        with open(path, "r", encoding="UTF-8") as file:
             source = yaml.safe_load(file)
             logger.info("load config file from %s path", path)
             return source
@@ -447,13 +488,13 @@ def convert_config(original_config: Dict[str, Any]) -> Dict[str, Any]:
     Returns first object of dictionary, because format of output is defined as
     a dictionary where key is name of controller.
     """
-    for name, controller in original_config.items():
-        config = {
-            "uuid": controller["details"]["uuid"],
-            "name": name,
-            "endpoint": controller["details"]["api-endpoints"][0],
-            "ca_cert": controller["details"]["ca-cert"],
-            "user": controller["account"]["user"],
-            "password": controller["account"]["password"],
-        }
-        return config
+    name, controller = next(iter(original_config.items()))  # get only first element
+    config = {
+        "uuid": controller["details"]["uuid"],
+        "name": name,
+        "endpoint": controller["details"]["api-endpoints"][0],
+        "ca_cert": controller["details"]["ca-cert"],
+        "user": controller["account"]["user"],
+        "password": controller["account"]["password"],
+    }
+    return config

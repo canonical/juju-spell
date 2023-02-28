@@ -1,3 +1,4 @@
+"""Module to build connection to controller."""
 import logging
 from typing import Callable, Optional
 from uuid import UUID
@@ -11,25 +12,30 @@ from tenacity.stop import StopBaseT
 from tenacity.wait import WaitBaseT
 
 from juju_spell.config import RetryPolicy
-from juju_spell.settings import DEFAULT_CONNECTIN_WAIT, DEFUALT_MAX_FRAME_SIZE
+from juju_spell.settings import DEFAULT_CONNECTION_WAIT, DEFAULT_MAX_FRAME_SIZE
 
 logger = logging.getLogger(__name__)
 
 
 def _after_log(uuid, name) -> Callable:
-    def log_it(retry_state: "RetryCallState") -> None:
+    """Help function for logs after retry."""
+
+    def log_it(retry_state: "RetryCallState") -> None:  # pylint: disable=W0613
         logger.info("%s connection to controller %s failed", uuid, name)
 
     return log_it
 
 
 def _before_log(uuid, name) -> Callable:
-    def log_it(retry_state: "RetryCallState") -> None:
+    """Help function for logs before retry."""
+
+    def log_it(retry_state: "RetryCallState") -> None:  # pylint: disable=W0613
         logger.info("Start connect to controller %s %s", uuid, name)
 
     return log_it
 
 
+# pylint: disable=R0913
 async def _conn(
     controller: juju.Controller,
     uuid: UUID,
@@ -53,8 +59,8 @@ async def _conn(
             reraise=True,
         ):
             with attempt:
-                await controller._connector.connect(
-                    max_frame_size=DEFUALT_MAX_FRAME_SIZE,
+                await controller._connector.connect(  # pylint: disable=W0212
+                    max_frame_size=DEFAULT_MAX_FRAME_SIZE,
                     endpoint=endpoint,
                     username=username,
                     password=password,
@@ -62,9 +68,9 @@ async def _conn(
                     retries=0,  # disable retires in connection
                     retry_backoff=0,
                 )
-                controller._connector.controller_uuid = uuid
-                controller._connector.controller_name = name
-                logger.info(f"{attempt} finish")
+                controller._connector.controller_uuid = uuid  # pylint: disable=W0212
+                controller._connector.controller_name = name  # pylint: disable=W0212
+                logger.info("%s finish", attempt)
     except RetryError as err:
         logger.info(
             "%s connection to controller %s failed with error '%s'",
@@ -75,6 +81,7 @@ async def _conn(
         raise
 
 
+# pylint: disable=R0913
 async def build_controller_conn(
     controller: juju.Controller,
     uuid: UUID,
@@ -85,7 +92,7 @@ async def build_controller_conn(
     cacert: str,
     retry_policy: Optional[RetryPolicy] = None,
 ):
-    # Apply default to retry policy if not config.
+    """Builder for controller connection."""
     if retry_policy is None:
         retry_policy = RetryPolicy()
 
@@ -93,7 +100,7 @@ async def build_controller_conn(
     # is unreachable. This can happen, for example, when port forwarding is
     # through a subprocess and the process has not yet started.
     retry_funcs = [tenacity.retry_if_exception_type(JujuConnectionError)]
-    wait_func: tenacity.wait.wait_base = tenacity.wait_fixed(DEFAULT_CONNECTIN_WAIT)
+    wait_func: tenacity.wait.wait_base = tenacity.wait_fixed(DEFAULT_CONNECTION_WAIT)
     stop_funcs = []
 
     if retry_policy.attempt:

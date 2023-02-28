@@ -13,8 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""JujuSpell juju remove user command."""
-from typing import Optional
+"""Command to remove users."""
+from typing import Any, Optional
 
 from juju.controller import Controller
 
@@ -24,9 +24,11 @@ __all__ = ["RemoveUserCommand"]
 
 
 class RemoveUserCommand(BaseJujuCommand):
+    """Remove user command."""
+
     async def execute(
-        self, controller: Controller, *, user: Optional[str] = None, **kwargs
+        self, controller: Controller, *args: Any, user: Optional[str] = None, **kwargs: Any
     ) -> bool:
         await controller.remove_user(username=user)
-        self.logger.info(f"user `{user}` was successfully removed")
+        self.logger.info("%s user `%s` was successfully removed", controller.controller_uuid, user)
         return True

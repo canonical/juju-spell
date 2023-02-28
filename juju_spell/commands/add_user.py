@@ -1,3 +1,6 @@
+"""Command to add users."""
+from typing import Any, Dict
+
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand
@@ -7,7 +10,9 @@ __all__ = ["AddUserCommand"]
 
 
 class AddUserCommand(BaseJujuCommand):
-    async def execute(self, controller: Controller, **kwargs):
+    """Add user command."""
+
+    async def execute(self, controller: Controller, *args: Any, **kwargs: Any) -> Dict[str, str]:
         password = kwargs["password"]
         if len(password) == 0:
             password = random_password()

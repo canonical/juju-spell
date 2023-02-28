@@ -23,6 +23,8 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from juju.controller import Controller
 from juju.model import Model
 
+from juju_spell.exceptions import JujuSpellError
+
 
 @dataclasses.dataclass(frozen=True)
 class Result:
@@ -36,7 +38,7 @@ class Result:
 class BaseJujuCommand(metaclass=ABCMeta):
     """Base Juju commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init for command."""
         self.name = getattr(self.__class__, "__name__", "unknown")
         self.logger = logging.getLogger(self.name)
@@ -63,7 +65,8 @@ class BaseJujuCommand(metaclass=ABCMeta):
             yield model_name, model
             await model.disconnect()
 
-    async def pre_check(self, controller: Controller, **kwargs) -> Optional[Result]:
+    # pylint: disable=W0613
+    async def pre_check(self, controller: Controller, **kwargs: Any) -> Optional[Result]:
         """Run pre-check for command."""
         self.logger.debug("%s running pre-check", controller.controller_uuid)
         if not controller.is_connected():
@@ -71,9 +74,15 @@ class BaseJujuCommand(metaclass=ABCMeta):
                 "%s pre-check: controller is connected",
                 controller.controller_uuid,
             )
-            return Result(False, error=f"controller {controller.controller_uuid} is not connected")
+            return Result(
+                False,
+                error=JujuSpellError(f"controller {controller.controller_uuid} is not connected"),
+            )
 
-    async def dry_run(self, controller: Controller, **kwargs) -> Optional[Result]:
+        return None
+
+    # pylint: disable=W0613
+    async def dry_run(self, controller: Controller, **kwargs: Any) -> Result:
         """Dry-run will output the necessary information of the target."""
         self.logger.info("%s running dry-run", controller.controller_uuid)
         return Result(
@@ -84,7 +93,7 @@ class BaseJujuCommand(metaclass=ABCMeta):
             },
         )
 
-    async def run(self, controller: Controller, **kwargs) -> Result:
+    async def run(self, controller: Controller, **kwargs: Any) -> Result:
         """Execute Juju command.
 
         **This function should not be changed.**
@@ -96,7 +105,7 @@ class BaseJujuCommand(metaclass=ABCMeta):
                 output = Result(True, output=output)
 
             return output
-        except Exception as error:
+        except Exception as error:  # pylint: disable=W0718
             self.logger.exception(error)
             return Result(False, output=None, error=error)
 
@@ -106,7 +115,12 @@ class BaseJujuCommand(metaclass=ABCMeta):
         return False
 
     @abstractmethod
-    async def execute(self, controller: Controller, *args, **kwargs) -> Any:  # pragma: no cover
+    async def execute(
+        self,
+        controller: Controller,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:  # pragma: no cover
         """Execute function.
 
         This part will be the main part function
@@ -115,10 +129,12 @@ class BaseJujuCommand(metaclass=ABCMeta):
             kwargs: This will be the kwargs passed to the function which
                 will contain the config for the selected controller
         """
-        ...
 
 
-def _apply_model_mappings(models: List[str], model_mappings: Dict[str, List[str]]) -> List[str]:
+def _apply_model_mappings(
+    models: List[str],
+    model_mappings: Optional[Dict[str, List[str]]],
+) -> List[str]:
     """Replace the models with values from model_mappings.
 
     If --model parameter is provided searches the map for matching model, if found
