@@ -18,6 +18,7 @@
 from .add_user import AddUserCMD
 from .enable_user import EnableUserCMD
 from .grant import GrantCMD
+from .list_models import ListModelsCMD
 from .ping import PingCMD
 from .remove_user import RemoveUserCMD
 from .show_controller import ShowControllerInformationCMD
@@ -33,4 +34,5 @@ __all__ = [
     "StatusCMD",
     "ShowControllerInformationCMD",
     "UpdatePackages",
+    "ListModelsCMD",
 ]
