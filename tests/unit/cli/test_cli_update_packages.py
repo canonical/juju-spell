@@ -48,9 +48,7 @@ def test_fill_parser():
     assert parser.add_argument.call_count == 6
     parser.add_argument.assert_has_calls(
         [
-            mock.call(
-                "--patch", type=get_patch_config, help="patch file", required=True
-            ),
+            mock.call("--patch", type=get_patch_config, help="patch file", required=True),
         ]
     )
 

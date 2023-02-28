@@ -8,7 +8,7 @@ from juju_spell.cli.update_packages import get_patch_config
 from juju_spell.commands.update_packages import (
     PackageUpdateResult,
     UnitUpdateResult,
-    UpdatePackages,
+    UpdatePackagesCommand,
     UpdateResult,
 )
 
@@ -180,7 +180,7 @@ async def _mock_model(output):
 
 
 def test_set_success_flags(unit_update_result, expected_packages):
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     update_packages.set_success_flags(unit_update_result, expected_packages)
     assert unit_update_result.success
 
@@ -194,56 +194,50 @@ def test_set_apps_to_update(patch_config, unit_update_result):
     app_status.units = [unit]
     model.applications = {"ubuntu": app_status}
 
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     update_packages.set_apps_to_update(updates=patch_config, model=model, dry_run=False)
 
     unit_update_result = copy.deepcopy(unit_update_result)
-    unit_update_result.packages = None
+    unit_update_result.packages = []
     update_result = copy.deepcopy(unit_update_result)
     update_result.raw_output = ""
     update_result.success = False
-    result.applications[0].results = [
-        UpdateResult(application="ubuntu", units=[update_result])
-    ]
+    result.applications[0].results = [UpdateResult(application="ubuntu", units=[update_result])]
 
     assert result == patch_config
 
 
 def test_get_update_command(patch_config):
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
 
     app = patch_config.applications[0]
     res = update_packages.get_update_command(app, False)
     assert (
-        res
-        == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
+        res == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
         " --option=Dpkg::Options::=--force-confdef dist-upgrade --upgrade -y  "
     )
     res = update_packages.get_update_command(app, True)
     assert (
-        res
-        == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
+        res == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
         " --option=Dpkg::Options::=--force-confdef dist-upgrade --upgrade -y "
         " --dry-run"
     )
     app.dist_upgrade = False
     res = update_packages.get_update_command(app, False)
     assert (
-        res
-        == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
+        res == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
         " --option=Dpkg::Options::=--force-confdef install --upgrade -y apt rsync "
     )
     res = update_packages.get_update_command(app, True)
     assert (
-        res
-        == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
+        res == "sudo apt-get update ; sudo apt-get --option=Dpkg::Options::=--force-confold"
         " --option=Dpkg::Options::=--force-confdef install --upgrade -y apt"
         " rsync --dry-run"
     )
 
 
 def test_parse_result(unit_update_result):
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     result = update_packages.parse_result(RAW_OUTPUT_INSTALL)
     assert [p in result for p in unit_update_result.packages] == [True, True]
 
@@ -253,7 +247,7 @@ def test_parse_result(unit_update_result):
 
 @pytest.mark.asyncio
 async def test_run_updates_on_model(patch_config, unit_update_result):
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     model = await _mock_model(RAW_OUTPUT_DRYRUN)
 
     patch_config.applications[0].results = [
@@ -264,6 +258,7 @@ async def test_run_updates_on_model(patch_config, unit_update_result):
                     unit="ubuntu/0",
                     command=UNIT_UPDATE_COMMAND,
                     success=False,
+                    packages=None,
                     raw_output=RAW_OUTPUT_DRYRUN,
                 )
             ],
@@ -284,7 +279,7 @@ async def test_make_updates(patch_config, unit_update_result):
     controller = AsyncMock()
     controller.get_model.return_value = model
 
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     result = await update_packages.make_updates(
         controller=controller,
         updates=patch_config,
@@ -305,7 +300,7 @@ async def test_execute(patch_config, unit_update_result):
     model = await _mock_model(RAW_OUTPUT_DRYRUN)
     controller, controller_config = await _mock_controller(model)
 
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     result = await update_packages.execute(
         controller=controller,
         models=["lma"],
@@ -327,7 +322,7 @@ async def test_dry_run(patch_config, unit_update_result):
     model = await _mock_model(RAW_OUTPUT_DRYRUN)
     controller, controller_config = await _mock_controller(model)
 
-    update_packages: UpdatePackages = UpdatePackages()
+    update_packages: UpdatePackagesCommand = UpdatePackagesCommand()
     result = await update_packages.dry_run(
         controller=controller,
         models=["lma"],

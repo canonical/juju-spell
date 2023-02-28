@@ -17,7 +17,7 @@
 import logging
 import os
 import textwrap
-from typing import List
+from typing import Any, List
 
 import yaml
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -26,7 +26,7 @@ from juju_spell.cli.base import JujuWriteCMD
 from juju_spell.commands.update_packages import (
     Application,
     PackageToUpdate,
-    UpdatePackages,
+    UpdatePackagesCommand,
     Updates,
 )
 from juju_spell.exceptions import JujuSpellError
@@ -66,7 +66,7 @@ class UpdatePackages(JujuWriteCMD):
         """
     )
 
-    command = UpdatePackages
+    command = UpdatePackagesCommand
 
     def fill_parser(self, parser: _CustomArgumentParser) -> None:
         super().fill_parser(parser=parser)
@@ -78,7 +78,7 @@ class UpdatePackages(JujuWriteCMD):
         )
 
 
-def load_patch_file(path: str):
+def load_patch_file(path: str) -> Any:
     """Load patch file.
 
     raises: IsADirectoryError if path is directory
@@ -86,19 +86,18 @@ def load_patch_file(path: str):
     raises: PermissionError -> JujuSpellError if user has no permission to path
     """
     try:
-        with open(path, "r") as file:
+        with open(path, "r", encoding="UTF-8") as file:
             source = yaml.safe_load(file)
-            logger.info("load config file from %s path", path)
+            logger.info("load patch file from %s path", path)
             return source
     except FileNotFoundError as error:
-        logger.error("config file `%s` does not exists", path)
-        raise JujuSpellError(f"config file {path} does not exist") from error
+        raise JujuSpellError(f"patch file {path} does not exist") from error
     except PermissionError as error:
-        logger.error("not enough permission for configuration file `%s`", path)
-        raise JujuSpellError(f"permission denied to read config file {path}") from error
+        raise JujuSpellError(f"permission denied to read patch file {path}") from error
 
 
-def get_patch_config(file_path: str):
+def get_patch_config(file_path: str) -> Updates:
+    """Load patch config."""
     patch = load_patch_file(file_path)
     applications: List[Application] = []
     errors = []
@@ -112,9 +111,7 @@ def get_patch_config(file_path: str):
 
         dist_upgrade = app.get("dist_upgrade", False)
         if not isinstance(dist_upgrade, bool):
-            errors.append(
-                f"application['{app['application']}'].dist_upgrade should be bool"
-            )
+            errors.append(f"application['{app['application']}'].dist_upgrade should be bool")
         applications.append(
             Application(
                 name_expr=app["application"],
@@ -125,8 +122,6 @@ def get_patch_config(file_path: str):
         )
 
     if len(errors) > 0:
-        raise JujuSpellError(
-            f"errors in input file:{os.linesep}{os.linesep.join(errors)}"
-        )
+        raise JujuSpellError(f"errors in input file:{os.linesep}{os.linesep.join(errors)}")
 
     return Updates(applications=applications)
