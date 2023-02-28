@@ -19,6 +19,8 @@ from unittest import mock
 
 import pytest
 
+from juju_spell.exceptions import JujuSpellError
+
 
 class TestBaseJujuCommand:
     def test_init(self, test_juju_command):
@@ -59,7 +61,8 @@ class TestBaseJujuCommand:
 
         assert result is not None
         assert result.success is False
-        assert result.error == "controller 1234 is not connected"
+        assert isinstance(result.error, JujuSpellError)
+        assert str(result.error) == "controller 1234 is not connected"
 
     @pytest.mark.asyncio
     async def test_run(self, test_juju_command):

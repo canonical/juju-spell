@@ -191,7 +191,7 @@ def test_sshuttle_proc(mock_popen, args, exp_cmd):
     [
         ("10.1.1.1:17070", None, False, "10.1.1.1:17070"),
         ("10.1.1.1:17070", Connection("10.2.2.1"), False, "localhost:18070"),
-        ("10.1.1.1:17070", Connection("10.2.2.1"), True, "10.1.1.1:17070"),
+        ("10.1.1.1:17070", Connection("10.2.2.1", subnets=["1.1.1.0/24"]), True, "10.1.1.1:17070"),
     ],
 )
 @mock.patch("juju_spell.connections.network.get_free_tcp_port", return_value=18070)
