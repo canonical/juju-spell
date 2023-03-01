@@ -54,6 +54,7 @@ class ListModelsCMD(JujuReadCMD):
         - model-c
 
         $ juju-spell list-models
+        "Use --refresh option with this command to see the latest information."
 
         controller-a:
         - model-a
