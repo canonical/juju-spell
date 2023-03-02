@@ -18,7 +18,7 @@
 import argparse
 import logging
 import textwrap
-from typing import List, Sequence
+from typing import List
 
 from craft_cli.dispatcher import _CustomArgumentParser
 
@@ -124,18 +124,13 @@ def get_application_config(path: str) -> List[ApplicationConfig]:
     return result
 
 
+# pylint: disable=too-few-public-methods,signature-differs
+# mypy: allow-untyped-defs
 class KeyValue(argparse.Action):
     """Parse parameters as key=value pairs."""
 
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str | Sequence | None,
-        option_string: str | None = None,
-    ) -> None:
+    def __call__(self, parser, namespace, values, option_string=None) -> None:
         setattr(namespace, self.dest, {})
-
         if values:
             for value in values:
                 key, value = value.split("=", 1)
