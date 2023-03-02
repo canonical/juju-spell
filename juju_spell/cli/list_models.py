@@ -26,9 +26,7 @@ from craft_cli.dispatcher import _CustomArgumentParser
 from juju_spell.cli.base import JujuReadCMD
 from juju_spell.commands.list_models import ListModelsCommand
 
-WARNING_HEADING = (
-    "Use --refresh option with this command to see the latest information."
-)
+WARNING_HEADING = "Use --refresh option with this command to see the latest information."
 
 
 class ListModelsCMD(JujuReadCMD):

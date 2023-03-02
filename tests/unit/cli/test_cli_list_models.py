@@ -81,7 +81,6 @@ def test_format_output(retval, expected_heading, expected_models):
         sort_keys=False,
     )
     expected_output = (
-        f"{expected_heading}{os.linesep}{os.linesep}{expected_models_str}{os.linesep}"
-        .lstrip()
+        f"{expected_heading}{os.linesep}{os.linesep}{expected_models_str}{os.linesep}".lstrip()
     )
     assert expected_output == output

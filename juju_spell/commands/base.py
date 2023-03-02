@@ -43,23 +43,38 @@ class BaseJujuCommand(metaclass=ABCMeta):
         self.name = getattr(self.__class__, "__name__", "unknown")
         self.logger = logging.getLogger(self.name)
 
-    @staticmethod
+    async def get_filtered_model_names(
+        self,
+        controller: Controller,
+        model_mappings: Dict[str, List[str]],
+        models: Optional[List[str]] = None,
+    ) -> List[str]:
+        """Get filtered model names for controller.
+
+        If models is None, then all model names for controller will be
+        returned.  If the model_mapping[model] exits for specific model it will
+        be replaced by the list of values from model_mapping[model] from
+        config.
+        """
+        if models is None or len(models) <= 0:
+            all_models = await controller.list_models()
+        else:
+            all_models = _apply_model_mappings(models, model_mappings)
+        return all_models
+
     async def get_filtered_models(
+        self,
         controller: Controller,
         model_mappings: Dict[str, List[str]],
         models: Optional[List[str]] = None,
     ) -> AsyncGenerator[Tuple[str, Model], None]:
         """Get filtered models for controller.
 
-        If models is None, then all models for controller will be returned.
-        If the model_mapping[model] exits for specific model it will be replaced by the
-        list of values from model_mapping[model] from config.
+        If models is None, then all models for controller will be returned.  If
+        the model_mapping[model] exits for specific model it will be replaced
+        by the list of values from model_mapping[model] from config.
         """
-        if models is None or len(models) <= 0:
-            all_models = await controller.list_models()
-        else:
-            all_models = _apply_model_mappings(models, model_mappings)
-
+        all_models = await self.get_filtered_model_names(controller, model_mappings, models=models)
         for model_name in all_models:
             model = await controller.get_model(model_name)
             yield model_name, model
