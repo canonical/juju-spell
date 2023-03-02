@@ -19,11 +19,12 @@ import logging
 import secrets
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Union
 
 import yaml
 
 from juju_spell.exceptions import JujuSpellError
+from juju_spell.settings import DEFAULT_CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -122,3 +123,33 @@ def load_yaml_file(path: Path) -> Any:
         raise JujuSpellError(f"patch file {path} does not exist") from error
     except PermissionError as error:
         raise JujuSpellError(f"permission denied to read patch file {path}") from error
+
+
+def save_to_cache(data: Dict, uuid: Union[str, Path]) -> None:
+    """Save data to the default cache directory named by the uuid."""
+    if not DEFAULT_CACHE_DIR.exists():
+        DEFAULT_CACHE_DIR.mkdir()
+    fname = DEFAULT_CACHE_DIR / uuid
+    try:
+        with open(fname, "w", encoding="UTF-8") as file:
+            data_string = yaml.safe_dump(data)
+            file.write(data_string)
+    except PermissionError as error:
+        raise JujuSpellError(f"permission denied to write to file `{fname}`.") from error
+    except Exception as error:
+        raise JujuSpellError(f"{str(error)}.") from error
+
+
+def load_from_cache(uuid: Union[str, Path]) -> Dict[str, Any]:
+    """Load data from the default cache directory named by the uuid."""
+    fname = DEFAULT_CACHE_DIR / uuid
+    try:
+        with open(fname, "r", encoding="UTF-8") as file:
+            data = yaml.safe_load(file)
+            return data
+    except FileNotFoundError as error:
+        raise JujuSpellError(f"`{fname}` does not exists.") from error
+    except PermissionError as error:
+        raise JujuSpellError(f"permission denied to read from file `{fname}`.") from error
+    except Exception as error:
+        raise JujuSpellError(f"{str(error)}.") from error

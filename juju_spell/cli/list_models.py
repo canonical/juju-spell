@@ -17,6 +17,7 @@
 """Command entrypoint for ControllerInformationCommand."""
 import os
 import textwrap
+from datetime import datetime
 from typing import Any
 
 import yaml
@@ -26,7 +27,10 @@ from craft_cli.dispatcher import _CustomArgumentParser
 from juju_spell.cli.base import JujuReadCMD
 from juju_spell.commands.list_models import ListModelsCommand
 
-WARNING_HEADING = "Use --refresh option with this command to see the latest information."
+WARNING_HEADING_TEMPLATE = (
+    "Use --refresh option with this command to see the latest information.\n\n(Last updated: {})"
+)
+DATETIME_FORMATTER = "%Y-%m-%d %H:%M:%S"
 
 
 class ListModelsCMD(JujuReadCMD):
@@ -52,7 +56,9 @@ class ListModelsCMD(JujuReadCMD):
         - model-c
 
         $ juju-spell list-models
-        "Use --refresh option with this command to see the latest information."
+        Use --refresh option with this command to see the latest information.
+
+        (Last updated: 1970-01-01 00:00:00)
 
         controller-a:
         - model-a
@@ -72,10 +78,7 @@ class ListModelsCMD(JujuReadCMD):
             "--refresh",
             default=False,
             action="store_true",
-            help=(
-                "This will force refresh all models from the controllers. (TODO: to be"
-                " implemented)"
-            ),
+            help="This will force refresh all models from the controllers.",
         )
 
     @staticmethod
@@ -94,13 +97,16 @@ class ListModelsCMD(JujuReadCMD):
                 },
                 "success": true,
                 "output": {
-                    "refresh": true,
+                    "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
+                    "name": "xxx-serverstack",
                     "models": [
                         "controller",
                         "model-a",
                         "model-b",
                         "model-c"
                     ],
+                    "refresh": true,
+                    "timestamp": 1172969203.1
                 },
                 "error": null
             }
@@ -116,7 +122,11 @@ class ListModelsCMD(JujuReadCMD):
             models = outputs["output"]["models"]
             refresh = outputs["output"]["refresh"]
             controller_models_mapping[controller_name] = models
-            heading = WARNING_HEADING if not refresh else ""
+            if not refresh:
+                timestamp = float(outputs["output"]["timestamp"])
+                heading = WARNING_HEADING_TEMPLATE.format(
+                    datetime.fromtimestamp(timestamp).strftime(DATETIME_FORMATTER)
+                )
 
         yaml_str = yaml.dump(
             controller_models_mapping,

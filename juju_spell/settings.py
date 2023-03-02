@@ -28,6 +28,7 @@ PERSONAL_CONFIG_PATH = pathlib.Path(
         "JUJUSPELL_PERSONAL_CONFIG", pathlib.Path(JUJUSPELL_DATA / "config.personal.yaml")
     )
 )
+DEFAULT_CACHE_DIR = pathlib.Path(JUJUSPELL_DATA / "caches")
 DEFAULT_PORT_RANGE = range(17071, 17170)
 DEFAULT_RETRY_BACKOFF = 1.5  # seconds
 DEFAULT_CONNECTION_TIMEOUT = 60  # seconds
