@@ -17,11 +17,11 @@
 import logging
 import os
 import textwrap
-from typing import Any, List
+from typing import List
 
-import yaml
 from craft_cli.dispatcher import _CustomArgumentParser
 
+from juju_spell import utils
 from juju_spell.cli.base import JujuWriteCMD
 from juju_spell.commands.update_packages import (
     Application,
@@ -78,27 +78,9 @@ class UpdatePackages(JujuWriteCMD):
         )
 
 
-def load_patch_file(path: str) -> Any:
-    """Load patch file.
-
-    raises: IsADirectoryError if path is directory
-    raises: FileNotFoundError -> JujuSpellError if fies does not exist
-    raises: PermissionError -> JujuSpellError if user has no permission to path
-    """
-    try:
-        with open(path, "r", encoding="UTF-8") as file:
-            source = yaml.safe_load(file)
-            logger.info("load patch file from %s path", path)
-            return source
-    except FileNotFoundError as error:
-        raise JujuSpellError(f"patch file {path} does not exist") from error
-    except PermissionError as error:
-        raise JujuSpellError(f"permission denied to read patch file {path}") from error
-
-
 def get_patch_config(file_path: str) -> Updates:
     """Load patch config."""
-    patch = load_patch_file(file_path)
+    patch = utils.load_yaml_file(file_path)
     applications: List[Application] = []
     errors = []
     for app in patch["applications"]:

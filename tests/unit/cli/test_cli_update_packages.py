@@ -7,8 +7,9 @@ import pytest
 import yaml
 
 from juju_spell.cli import UpdatePackages
-from juju_spell.cli.update_packages import get_patch_config, load_patch_file
+from juju_spell.cli.update_packages import get_patch_config
 from juju_spell.commands.update_packages import Application, PackageToUpdate, Updates
+from juju_spell.utils import load_yaml_file
 
 TEST_PATCH = """
 ---
@@ -54,18 +55,18 @@ def test_fill_parser():
 
 
 @pytest.mark.parametrize("input_yaml", [TEST_PATCH])
-def test_load_patch_file(tmp_path, input_yaml):
+def test_load_yaml_file(tmp_path, input_yaml):
     """Test load_patch_file."""
     file_path = tmp_path / f"{uuid.uuid4()}.yaml"
     with open(file_path, "w", encoding="utf8") as file:
         file.write(input_yaml)
 
-    result = load_patch_file(file_path)
+    result = load_yaml_file(file_path)
     assert result == yaml.safe_load(io.StringIO(input_yaml))
 
 
 @pytest.mark.parametrize("input_yaml", [TEST_PATCH])
-@mock.patch("juju_spell.cli.update_packages.load_patch_file")
+@mock.patch("juju_spell.utils.load_yaml_file")
 def test_get_patch_config(mock_load_patch_file, input_yaml):
     """Test get_patch_config."""
     mock_load_patch_file.return_value = yaml.safe_load(io.StringIO(input_yaml))

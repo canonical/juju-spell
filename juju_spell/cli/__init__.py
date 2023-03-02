@@ -16,6 +16,7 @@
 
 """JujuSpell cli commands."""
 from .add_user import AddUserCMD
+from .config import ConfigCMD
 from .enable_user import EnableUserCMD
 from .grant import GrantCMD
 from .list_models import ListModelsCMD
@@ -35,4 +36,5 @@ __all__ = [
     "ShowControllerInformationCMD",
     "UpdatePackages",
     "ListModelsCMD",
+    "ConfigCMD",
 ]

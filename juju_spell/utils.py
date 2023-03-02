@@ -15,9 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities for JujuSpell."""
+import logging
 import secrets
 from collections import defaultdict
-from typing import Dict, Iterable, List
+from typing import Any, Dict, Iterable, List
+
+import yaml
+
+from juju_spell.exceptions import JujuSpellError
+
+logger = logging.getLogger()
 
 
 def strtobool(value: str) -> bool:
@@ -96,3 +103,21 @@ def merge_list_of_dict_by_key(key: str, lists: List[List[Dict]]) -> List:
 def random_password(length: int = 30) -> str:
     """Generate random password."""
     return secrets.token_urlsafe(length)
+
+
+def load_yaml_file(path: str) -> Any:
+    """Load yaml file.
+
+    raises: IsADirectoryError if path is directory
+    raises: FileNotFoundError -> JujuSpellError if fies does not exist
+    raises: PermissionError -> JujuSpellError if user has no permission to path
+    """
+    try:
+        with open(path, "r", encoding="UTF-8") as file:
+            source = yaml.safe_load(file)
+            logger.info("load yaml file from %s path", path)
+            return source
+    except FileNotFoundError as error:
+        raise JujuSpellError(f"patch file {path} does not exist") from error
+    except PermissionError as error:
+        raise JujuSpellError(f"permission denied to read patch file {path}") from error
