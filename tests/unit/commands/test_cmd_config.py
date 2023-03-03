@@ -6,7 +6,7 @@ import pytest as pytest
 from juju_spell.commands.config import (
     ApplicationConfig,
     ConfigCommand,
-    apply_config,
+    apply_configuration,
     apply_file_config,
 )
 
@@ -120,19 +120,55 @@ async def test_apply_file_config():
 
 
 @pytest.mark.asyncio
-async def test_apply_config_multiple():
-    ubuntu_config = {"hostname": "test-test", "cpu": "2", "others": "ok"}
-    ubuntu_set_config = {"hostname": "xxx", "cpu": "44"}
-    ubuntu_expected_config = {"hostname": "xxx", "cpu": "44", "others": "ok"}
-    app = MockApp(ubuntu_config)
-    retval = await apply_config(app, ubuntu_set_config, None)
-    assert retval == ubuntu_expected_config
+async def test_apply_configuration_get_single_config():
+    ubuntu_config = {"hostname": "test-test", "cpu": "2"}
+    model = _mock_model(MockApp(ubuntu_config))
+    kwargs = {
+        "config-app": "ubuntu",
+        "config-get": "hostname",
+    }
+
+    result = await apply_configuration(kwargs, model)
+    assert result == {"ubuntu": {"hostname": "test-test"}}
 
 
 @pytest.mark.asyncio
-async def test_apply_config_single():
+async def test_apply_configuration_get_config():
+    ubuntu_config = {"hostname": "test-test", "cpu": "2"}
+    model = _mock_model(MockApp(ubuntu_config))
+    kwargs = {"config-app": "ubuntu"}
+
+    result = await apply_configuration(kwargs, model)
+
+    assert result == {"ubuntu": ubuntu_config}
+
+
+@pytest.mark.asyncio
+async def test_apply_configuration_set_multiple_config():
     ubuntu_config = {"hostname": "test-test", "cpu": "2", "others": "ok"}
-    ubuntu_expected_config = {"hostname": "test-test"}
-    app = MockApp(ubuntu_config)
-    retval = await apply_config(app, None, "hostname")
-    assert retval == ubuntu_expected_config
+    ubuntu_set_config = {"hostname": "xxx", "cpu": "44"}
+    ubuntu_expected_config = {"hostname": "xxx", "cpu": "44", "others": "ok"}
+
+    model = _mock_model(MockApp(ubuntu_config))
+    kwargs = {
+        "config-app": "ubuntu",
+        "config-set": ubuntu_set_config,
+    }
+
+    result = await apply_configuration(kwargs, model)
+    assert result == {"ubuntu": ubuntu_expected_config}
+
+
+@pytest.mark.asyncio
+async def test_apply_configuration_set_from_file():
+    ubuntu_config = {"hostname": "test-test", "cpu": "2", "others": "ok"}
+    ubuntu_set_config = {"hostname": "xxx", "cpu": "44"}
+    ubuntu_expected_config = {"hostname": "xxx", "cpu": "44", "others": "ok"}
+
+    model = _mock_model(MockApp(ubuntu_config))
+    kwargs = {
+        "config-file": [ApplicationConfig(application="ubuntu", config=ubuntu_set_config)],
+    }
+    result = await apply_configuration(kwargs, model)
+
+    assert result == {"ubuntu": ubuntu_expected_config}
