@@ -26,6 +26,7 @@ from craft_cli.dispatcher import _CustomArgumentParser
 
 from juju_spell.cli.base import JujuWriteCMD
 from juju_spell.commands.add_user import AddUserCommand
+from juju_spell.commands.grant import ACL_CHOICES
 from juju_spell.settings import PERSONAL_CONFIG_PATH
 
 
@@ -78,6 +79,21 @@ class AddUserCMD(JujuWriteCMD):
             nargs="?",
             required=False,
             help=argparse.SUPPRESS,
+        )
+        parser.add_argument(
+            "--acl",
+            type=str,
+            choices=ACL_CHOICES,
+            default=False,
+            help=f"Access control. e.g., {','.join(ACL_CHOICES)}.",
+            required=True,
+        )
+        parser.add_argument(
+            "--overwrite",
+            default=False,
+            action="store_true",
+            help="Overwrite even user is exists.",
+            required=False,
         )
 
     def before(self, parsed_args: argparse.Namespace) -> None:

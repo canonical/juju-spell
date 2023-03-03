@@ -1,16 +1,10 @@
-from typing import AsyncGenerator, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from juju_spell.commands.status import StatusCommand
 from juju_spell.config import Controller
-
-
-async def _async_generator(values: List) -> AsyncGenerator:
-    """Async generator."""
-    for value in values:
-        yield value
+from tests.unit.utils import _async_generator
 
 
 @pytest.mark.asyncio
