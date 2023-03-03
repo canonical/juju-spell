@@ -1,0 +1,6 @@
+juju
+pyyaml
+craft-cli
+confuse
+tenacity
+types-PyYAML

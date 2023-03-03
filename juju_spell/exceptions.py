@@ -21,5 +21,5 @@ class JujuSpellError(Exception):
     """Base exception for JujuSpell."""
 
 
-class Abort(JujuSpellError):
+class AbortError(JujuSpellError):
     """An internal signalling exception that signals JujuSpell to abort."""

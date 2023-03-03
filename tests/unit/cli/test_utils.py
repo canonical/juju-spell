@@ -9,7 +9,7 @@ from juju_spell.cli.utils import (
     parse_comma_separated_str,
     parse_filter,
 )
-from juju_spell.exceptions import Abort, JujuSpellError
+from juju_spell.exceptions import AbortError, JujuSpellError
 
 
 @mock.patch("juju_spell.cli.utils.emit")
@@ -31,7 +31,7 @@ def test_get_value_from_prompt_exception(mock_visible_prompt_func, _):
     prompt = "test: [Y/n]"
     mock_visible_prompt_func.side_effect = KeyboardInterrupt
 
-    with pytest.raises(Abort):
+    with pytest.raises(AbortError):
         _get_value_from_prompt(prompt)
 
 
@@ -67,7 +67,7 @@ def test_confirm_abort(_, mock_get_value_from_prompt, inputs):
     prompt = "test: [Y/n]"
     mock_get_value_from_prompt.side_effect = inputs
 
-    with pytest.raises(Abort):
+    with pytest.raises(AbortError):
         confirm(prompt, abort=True)
 
 

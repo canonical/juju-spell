@@ -23,7 +23,7 @@ from typing import Callable, List
 
 from craft_cli import emit
 
-from juju_spell.exceptions import Abort, JujuSpellError
+from juju_spell.exceptions import AbortError, JujuSpellError
 from juju_spell.filter import FILTER_EXPRESSION_REGEX
 
 visible_prompt_func: Callable[[str], str] = input
@@ -35,7 +35,7 @@ def _get_value_from_prompt(prompt: str) -> str:
         with emit.pause():
             return visible_prompt_func(prompt).strip()
     except (KeyboardInterrupt, EOFError):
-        raise Abort("Aborted by user") from None
+        raise AbortError("AbortErrored by user") from None
 
 
 def confirm(
@@ -47,7 +47,7 @@ def confirm(
     """Prompts for confirmation (yes/no question).
 
     If the user aborts the input by sending an interrupt signal this
-    function will catch it and raise a :exc:`Abort` exception.
+    function will catch it and raise a :exc:`AbortError` exception.
 
     If stdin is not a tty, the :exc:`JujuSpellError` exception will be raised.
 
@@ -57,7 +57,7 @@ def confirm(
     :param text: the question to ask.
     :param default: default answer
     :param abort: if this is set to `True` a negative answer aborts the
-                  exception by raising :exc:`Abort`.
+                  exception by raising :exc:`AbortError`.
     :param prompt_suffix: a suffix that should be added to the prompt.
     """
     if not sys.stdin.isatty():
@@ -77,7 +77,7 @@ def confirm(
         elif value in ("y", "yes"):
             return True
         elif value in ("n", "no") and abort:
-            raise Abort("Aborted by user")
+            raise AbortError("AbortErrored by user")
         elif value in ("n", "no"):
             return False
 
