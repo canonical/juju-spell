@@ -18,6 +18,7 @@
 import argparse
 import logging
 import textwrap
+from pathlib import Path
 from typing import List
 
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -119,7 +120,7 @@ class ConfigCMD(JujuWriteCMD):
 
 def get_application_config(path: str) -> List[ApplicationConfig]:
     """Parse application config to model."""
-    yaml_config = utils.load_yaml_file(path)
+    yaml_config = utils.load_yaml_file(Path(path))
     result: List[ApplicationConfig] = []
     for app, value_dict in yaml_config.items():
         application_config = ApplicationConfig(application=app, config=value_dict)

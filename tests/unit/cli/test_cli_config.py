@@ -1,5 +1,6 @@
 import argparse
 import io
+from pathlib import Path
 from typing import List
 from unittest import mock
 
@@ -74,7 +75,7 @@ def test_get_application_config(mock_load_patch_file, input_yaml):
     mock_load_patch_file.return_value = yaml.safe_load(io.StringIO(input_yaml))
     real: List[ApplicationConfig] = get_application_config("test")
     assert real == TEST_APPLICATION_CONFIG
-    mock_load_patch_file.assert_called_once_with("test")
+    mock_load_patch_file.assert_called_once_with(Path("test"))
 
 
 @pytest.mark.parametrize(

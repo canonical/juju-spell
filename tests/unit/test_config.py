@@ -19,11 +19,11 @@ from juju_spell.config import (
     _apply_default,
     _validate_config,
     load_config,
-    load_config_file,
     merge_configs,
     validate_source_match_template,
 )
 from juju_spell.exceptions import JujuSpellError
+from juju_spell.utils import load_yaml_file
 from tests.unit.conftest import TEST_CONFIG, TEST_PERSONAL_CONFIG
 
 
@@ -334,7 +334,7 @@ def test_load_config_file(tmp_path, config_yaml):
     with open(file_path, "w", encoding="utf8") as file:
         file.write(config_yaml)
 
-    result = load_config_file(file_path)
+    result = load_yaml_file(file_path)
     assert result == yaml.safe_load(io.StringIO(config_yaml))
 
 
@@ -346,17 +346,17 @@ def test_load_config_file(tmp_path, config_yaml):
         (IsADirectoryError, IsADirectoryError),
     ],
 )
-@mock.patch("juju_spell.config.open")
+@mock.patch("juju_spell.utils.open")
 def test_load_config_file_exception(mock_open, tmp_path, raised_error, exp_error):
     """Test raising JujuSpell exception."""
     mock_open.side_effect = raised_error
     with pytest.raises(exp_error):
-        load_config_file(tmp_path)
+        load_yaml_file(tmp_path)
 
 
 @mock.patch("juju_spell.config._validate_config")
 @mock.patch("juju_spell.config.merge_configs")
-@mock.patch("juju_spell.config.load_config_file")
+@mock.patch("juju_spell.config.load_yaml_file")
 def test_load_config(mock_load_config_file, mock_merge_configs, mock_validate_config, tmp_path):
     """Test load config."""
     test_config_path = tmp_path / "config.yaml"

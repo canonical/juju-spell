@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import confuse
-import yaml
 from confuse import ConfigError, RootView
 
 from juju_spell.exceptions import JujuSpellError
@@ -16,7 +15,7 @@ from juju_spell.settings import (
     DEFAULT_CONNECTION_WAIT,
     DEFAULT_PORT_RANGE,
 )
-from juju_spell.utils import merge_list_of_dict_by_key
+from juju_spell.utils import load_yaml_file, merge_list_of_dict_by_key
 
 logger = logging.getLogger(__name__)
 
@@ -446,34 +445,11 @@ def merge_configs(config: Dict, personal_config: Dict) -> Dict:
     return config
 
 
-def load_config_file(path: Path) -> Dict:
-    """Load config file.
-
-    raises: IsADirectoryError if path is directory
-    raises: FileNotFoundError -> JujuSpellError if files does not exist
-    raises: PermissionError -> JujuSpellError if user has no permission to path
-    """
-    try:
-        with open(path, "r", encoding="UTF-8") as file:
-            source = yaml.safe_load(file)
-            logger.info("load config file from %s path", path)
-            return source
-    except FileNotFoundError as error:
-        logger.error("config file `%s` does not exists", path)
-        raise JujuSpellError(f"config file {path} does not exist") from error
-    except PermissionError as error:
-        logger.error("not enough permission for configuration file `%s`", path)
-        raise JujuSpellError(f"permission denied to read config file {path}") from error
-    except ConfigError as error:
-        logger.error("configuration file validation failed with error: %s", error)
-        raise JujuSpellError("configuration file validation failed") from error
-
-
 def load_config(config_path: Path, personal_config_path: Optional[Path] = None) -> Config:
     """Load ad validate yaml config file."""
-    source = load_config_file(config_path)
-    if personal_config_path and personal_config_path.exists():
-        personal_source = load_config_file(personal_config_path)
+    source = load_yaml_file(config_path)
+    if personal_config_path and Path(personal_config_path).exists():
+        personal_source = load_yaml_file(personal_config_path)
         # Merge personal and default config
         source = merge_configs(source, personal_source)
 

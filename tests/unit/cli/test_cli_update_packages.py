@@ -1,6 +1,7 @@
 import argparse
 import io
 import uuid
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -73,4 +74,4 @@ def test_get_patch_config(mock_load_patch_file, input_yaml):
 
     real: Updates = get_patch_config(file_path="test")
     assert real == TEST_UPDATES
-    mock_load_patch_file.assert_called_once_with("test")
+    mock_load_patch_file.assert_called_once_with(Path("test"))

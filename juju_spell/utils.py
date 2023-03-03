@@ -18,6 +18,7 @@
 import logging
 import secrets
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 import yaml
@@ -105,7 +106,7 @@ def random_password(length: int = 30) -> str:
     return secrets.token_urlsafe(length)
 
 
-def load_yaml_file(path: str) -> Any:
+def load_yaml_file(path: Path) -> Any:
     """Load yaml file.
 
     raises: IsADirectoryError if path is directory

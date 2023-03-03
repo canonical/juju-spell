@@ -17,6 +17,7 @@
 import logging
 import os
 import textwrap
+from pathlib import Path
 from typing import List
 
 from craft_cli.dispatcher import _CustomArgumentParser
@@ -80,7 +81,7 @@ class UpdatePackages(JujuWriteCMD):
 
 def get_patch_config(file_path: str) -> Updates:
     """Load patch config."""
-    patch = utils.load_yaml_file(file_path)
+    patch = utils.load_yaml_file(Path(file_path))
     applications: List[Application] = []
     errors = []
     for app in patch["applications"]:
