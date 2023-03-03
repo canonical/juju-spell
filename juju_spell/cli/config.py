@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""JujuSpell juju status command."""
+"""JujuSpell juju config command."""
 import argparse
 import logging
 import textwrap
@@ -30,7 +30,7 @@ logger = logging.getLogger()
 
 
 class ConfigCMD(JujuWriteCMD):
-    """JujuSpell juju status command."""
+    """JujuSpell juju config command."""
 
     name = "config"
     help_msg = "Gets, sets, or resets configuration for a deployed application"
@@ -85,7 +85,6 @@ class ConfigCMD(JujuWriteCMD):
     def fill_parser(self, parser: _CustomArgumentParser) -> None:
         """Add arguments specific to the export-login command."""
         super().fill_parser(parser)
-        # property_group = parser.add_mutually_exclusive_group(required=True)
         parser.add_argument(
             "--config-get",
             required=False,
@@ -101,6 +100,10 @@ class ConfigCMD(JujuWriteCMD):
         )
 
         application_group = parser.add_mutually_exclusive_group(required=True)
+        self.add_mutually_exclusive_group_parameters(application_group)
+
+    def add_mutually_exclusive_group_parameters(self, application_group) -> None:
+        """Add mutually exclusive group."""
         application_group.add_argument(
             "--config-file",
             type=get_application_config,

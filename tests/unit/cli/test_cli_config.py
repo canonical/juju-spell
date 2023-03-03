@@ -32,8 +32,6 @@ def test_fill_parser():
     cmd = ConfigCMD(None)
     cmd.fill_parser(parser)
 
-    # This one is to check the basic arguments is been added.
-    assert parser.add_argument.call_count == 7
     assert parser.add_mutually_exclusive_group.call_count == 1
     parser.add_argument.assert_has_calls(
         [
@@ -49,6 +47,27 @@ def test_fill_parser():
     )
 
 
+def test_add_mutually_exclusive_group_parameters() -> None:
+    application_group = mock.MagicMock(spec=argparse._MutuallyExclusiveGroup)
+    cmd = ConfigCMD(None)
+    cmd.add_mutually_exclusive_group_parameters(application_group)
+    application_group.add_argument.assert_has_calls(
+        [
+            mock.call(
+                "--config-file",
+                type=get_application_config,
+                required=False,
+                help="The path to yaml-formatted application config.",
+            ),
+            mock.call(
+                "--config-app",
+                required=False,
+                help="The application to show/update configuration.",
+            ),
+        ]
+    )
+
+
 @pytest.mark.parametrize("input_yaml", [TEST_APPLICATION_YAML])
 @mock.patch("juju_spell.utils.load_yaml_file")
 def test_get_application_config(mock_load_patch_file, input_yaml):
@@ -58,8 +77,23 @@ def test_get_application_config(mock_load_patch_file, input_yaml):
     mock_load_patch_file.assert_called_once_with("test")
 
 
-#
-# mock.call("--file", type=get_application_config,
-#           help="The path to yaml-formatted application config.", required=False),
-# mock.call("--application", type=str, help="The application to show/update configuration.",
-#           required=False),
+@pytest.mark.parametrize(
+    "parameters, expected",
+    [
+        (["--config-set", "a=3", "b=2", "c=z=2"], {"a": "3", "b": "2", "c": "z=2"}),
+        (["--config-set", "x=3", "y=2"], {"x": "3", "y": "2"}),
+        (["--config-set", 'x="2"', "y=2"], {"x": '"2"', "y": "2"}),
+        (["--config-set", 'x="2=2"', "y=2"], {"x": '"2=2"', "y": "2"}),
+    ],
+)
+def test_keyvalue(parameters, expected):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config-set",
+        nargs="*",
+        help="key=value pairs to update application config.",
+        required=False,
+        action=KeyValue,
+    )
+    args = parser.parse_args(args=parameters)
+    assert args.config_set == expected

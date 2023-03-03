@@ -9,7 +9,7 @@ from juju.model import Model
 
 from juju_spell.commands.base import BaseJujuCommand
 
-logger = logging.getLogger("eeee")
+logger = logging.getLogger()
 
 
 @dataclasses.dataclass
