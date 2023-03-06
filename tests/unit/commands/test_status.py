@@ -4,7 +4,7 @@ import pytest
 
 from juju_spell.commands.status import StatusCommand
 from juju_spell.config import Controller
-from tests.unit.commands.conftest import _async_generator
+from tests.unit.utils import _async_generator
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ import pytest
 
 from juju_spell.commands.grant import GrantCommand
 from juju_spell.config import _validate_config
-from tests.unit.commands.conftest import _async_generator
+from tests.unit.utils import _async_generator
 
 
 @pytest.mark.asyncio
