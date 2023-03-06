@@ -45,8 +45,8 @@ async def test_execute_get_single_config():
     model = _mock_model(MockApp(ubuntu_config))
     controller, controller_config = _mock_controller(model)
     kwargs = {
-        "config-app": "ubuntu",
-        "config-get": "hostname",
+        "config_app": "ubuntu",
+        "config_get": "hostname",
         "controller_config": controller_config,
     }
 
@@ -60,7 +60,7 @@ async def test_execute_get_config():
     ubuntu_config = {"hostname": "test-test", "cpu": "2"}
     model = _mock_model(MockApp(ubuntu_config))
     controller, controller_config = _mock_controller(model)
-    kwargs = {"config-app": "ubuntu", "controller_config": controller_config}
+    kwargs = {"config_app": "ubuntu", "controller_config": controller_config}
 
     config_cmd: ConfigCommand = ConfigCommand()
     result = await config_cmd.execute(controller=controller, models=["lma"], **kwargs)
@@ -77,9 +77,9 @@ async def test_execute_set_multiple_config():
     model = _mock_model(MockApp(ubuntu_config))
     controller, controller_config = _mock_controller(model)
     kwargs = {
-        "config-app": "ubuntu",
+        "config_app": "ubuntu",
         "controller_config": controller_config,
-        "config-set": ubuntu_set_config,
+        "config_set": ubuntu_set_config,
     }
 
     config_cmd: ConfigCommand = ConfigCommand()
@@ -98,7 +98,7 @@ async def test_execute_set_from_file():
     controller, controller_config = _mock_controller(model)
     kwargs = {
         "controller_config": controller_config,
-        "config-file": [ApplicationConfig(application="ubuntu", config=ubuntu_set_config)],
+        "config_file": [ApplicationConfig(application="ubuntu", config=ubuntu_set_config)],
     }
     config_cmd: ConfigCommand = ConfigCommand()
     result = await config_cmd.execute(controller=controller, models=["lma"], **kwargs)
@@ -124,8 +124,8 @@ async def test_apply_configuration_get_single_config():
     ubuntu_config = {"hostname": "test-test", "cpu": "2"}
     model = _mock_model(MockApp(ubuntu_config))
     kwargs = {
-        "config-app": "ubuntu",
-        "config-get": "hostname",
+        "config_app": "ubuntu",
+        "config_get": "hostname",
     }
 
     result = await apply_configuration(kwargs, model)
@@ -136,7 +136,7 @@ async def test_apply_configuration_get_single_config():
 async def test_apply_configuration_get_config():
     ubuntu_config = {"hostname": "test-test", "cpu": "2"}
     model = _mock_model(MockApp(ubuntu_config))
-    kwargs = {"config-app": "ubuntu"}
+    kwargs = {"config_app": "ubuntu"}
 
     result = await apply_configuration(kwargs, model)
 
@@ -151,8 +151,8 @@ async def test_apply_configuration_set_multiple_config():
 
     model = _mock_model(MockApp(ubuntu_config))
     kwargs = {
-        "config-app": "ubuntu",
-        "config-set": ubuntu_set_config,
+        "config_app": "ubuntu",
+        "config_set": ubuntu_set_config,
     }
 
     result = await apply_configuration(kwargs, model)
@@ -167,7 +167,7 @@ async def test_apply_configuration_set_from_file():
 
     model = _mock_model(MockApp(ubuntu_config))
     kwargs = {
-        "config-file": [ApplicationConfig(application="ubuntu", config=ubuntu_set_config)],
+        "config_file": [ApplicationConfig(application="ubuntu", config=ubuntu_set_config)],
     }
     result = await apply_configuration(kwargs, model)
 

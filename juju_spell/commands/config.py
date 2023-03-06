@@ -41,10 +41,10 @@ class ConfigCommand(BaseJujuCommand):
 async def apply_configuration(kwargs: Dict[str, Any], model: Model) -> Dict[str, Any]:
     """Get the parameter and apply config on model."""
     config: Dict[str, Any] = {}
-    application: str = kwargs.get("config-app", None)
-    updates: List[ApplicationConfig] = kwargs.get("config-file", None)
-    single_property: str = kwargs.get("config-get", None)
-    properties: Dict[str, str] = kwargs.get("config-set", None)
+    application: str = kwargs.get("config_app", None)
+    updates: List[ApplicationConfig] = kwargs.get("config_file", None)
+    single_property: str = kwargs.get("config_get", None)
+    properties: Dict[str, str] = kwargs.get("config_set", None)
 
     if application:
         juju_app: Application = model.applications.get(application)
