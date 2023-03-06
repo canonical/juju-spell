@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from juju.errors import JujuError
 
 from juju_spell.commands.add_user import AddUserCommand
 from juju_spell.commands.base import Result
@@ -28,7 +29,7 @@ async def test_add_user_execute(test_config_dict):
             "password": "new-user-pwd",
             "display_name": "new-user-display-name",
             "controller_config": controller,
-        }
+        },
     )
     mock_conn.add_user.assert_awaited_once_with(
         **{
@@ -88,7 +89,7 @@ async def test_add_user_execute_grant(
             "display_name": "new-user-display-name",
             "controller_config": controller,
             "acl": acl,
-        }
+        },
     )
 
     _mock_grant_cmd.run.assert_awaited_once_with(
@@ -99,7 +100,7 @@ async def test_add_user_execute_grant(
             "display_name": "new-user-display-name",
             "controller_config": controller,
             "acl": acl,
-        }
+        },
     )
     if grant_result.success:
         assert output == {
@@ -109,3 +110,72 @@ async def test_add_user_execute_grant(
         }
     else:
         assert output == grant_result
+
+
+@pytest.mark.asyncio
+@patch("juju_spell.commands.add_user.GrantCommand")
+@patch("juju_spell.commands.add_user.EnableUserCommand")
+@pytest.mark.parametrize(
+    "overwrite",
+    [
+        (True),
+        (False),
+    ],
+)
+async def test_add_user_overwrite(
+    mock_grant_cmd, mock_enable_user_cmd, test_config_dict, overwrite
+):
+    cmd = AddUserCommand()
+
+    mock_conn = AsyncMock()
+    mock_conn.add_user.side_effect = JujuError()
+
+    mock_get_user_result = AsyncMock()
+    mock_get_user_result.username = "new-user"
+    mock_get_user_result.display_name = "new-user-display-name"
+    mock_conn.get_user.return_value = mock_get_user_result
+
+    _mock_grant_cmd = AsyncMock()
+    mock_grant_cmd.return_value = _mock_grant_cmd
+    _mock_grant_cmd.run.return_value = Result(success=False)
+
+    _mock_enable_user_cmd = AsyncMock()
+    mock_enable_user_cmd.return_value = _mock_enable_user_cmd
+    _mock_enable_user_cmd.run.return_value = Result(success=False)
+
+    controller = _validate_config(test_config_dict).controllers[0]
+
+    if overwrite:
+        output = await cmd.execute(
+            mock_conn,
+            **{
+                "user": "new-user",
+                "password": "new-user-pwd",
+                "display_name": "new-user-display-name",
+                "controller_config": controller,
+                "acl": "superuser",
+                "overwrite": overwrite,
+            },
+        )
+
+        mock_conn.get_user.assert_awaited_once_with(username="new-user")
+        mock_get_user_result.set_password.assert_awaited_once_with("new-user-pwd")
+
+        assert output == {
+            "user": "new-user",
+            "display_name": "new-user-display-name",
+            "password": "new-user-pwd",
+        }
+    else:
+        with pytest.raises(JujuError):
+            output = await cmd.execute(
+                mock_conn,
+                **{
+                    "user": "new-user",
+                    "password": "new-user-pwd",
+                    "display_name": "new-user-display-name",
+                    "controller_config": controller,
+                    "acl": "superuser",
+                    "overwrite": overwrite,
+                },
+            )

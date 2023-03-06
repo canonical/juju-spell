@@ -20,7 +20,6 @@ from typing import Any, List, Optional
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand
-from juju_spell.exceptions import JujuSpellError
 
 __all__ = ["GrantCommand", "ACL_CHOICES"]
 
@@ -64,12 +63,7 @@ class GrantCommand(BaseJujuCommand):
             controller.uuid,
             kwargs["user"],
         )
-        result: bool = await controller.grant(username=kwargs["user"], acl=controller_acl)
-        if not result:
-            raise JujuSpellError(
-                f"Grant user {kwargs['user']} permission {controller_acl}"
-                f" on controller {controller.uuid} fail."
-            )
+        await controller.grant(username=kwargs["user"], acl=controller_acl)
 
         async for _, model in self.get_filtered_models(
             controller=controller,
@@ -83,14 +77,9 @@ class GrantCommand(BaseJujuCommand):
                 controller.uuid,
                 kwargs["user"],
             )
-            grant_model_result: bool = await controller.grant_model(
+            await controller.grant_model(
                 username=kwargs["user"],
                 model_uuid=model.uuid,
                 acl=model_acl,
             )
-            if not grant_model_result:
-                raise JujuSpellError(
-                    f"Grant user {kwargs['user']} permission {model_acl}"
-                    f" on controller {controller.uuid} model {model.uuid} fail."
-                )
         return True

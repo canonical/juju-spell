@@ -88,6 +88,13 @@ class AddUserCMD(JujuWriteCMD):
             help=f"Access control. e.g., {','.join(ACL_CHOICES)}.",
             required=True,
         )
+        parser.add_argument(
+            "--overwrite",
+            default=False,
+            action="store_true",
+            help="Overwrite even user is exists.",
+            required=False,
+        )
 
     def before(self, parsed_args: argparse.Namespace) -> None:
         """Run before execution."""
