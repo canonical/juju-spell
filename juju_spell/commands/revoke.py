@@ -13,52 +13,44 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Command to enable users."""
+"""Revoke commands."""
 from typing import Any, Optional
 
 from juju.controller import Controller
-from juju.errors import JujuError
 
 from juju_spell.commands.base import BaseJujuCommand
 
-__all__ = ["EnableUserCommand", "DisableUserCommand"]
+__all__ = ["RevokeCommand", "RevokeModelCommand"]
 
 
-class EnableUserCommand(BaseJujuCommand):
-    """Enable user."""
+class RevokeCommand(BaseJujuCommand):
+    """Revoke user permission on controller."""
 
     async def execute(
         self,
         controller: Controller,
         *args: Any,
-        overwrite: bool = False,
+        user: Optional[str] = None,
+        acl: Optional[str] = "login",
         **kwargs: Any,
     ) -> bool:
         """Execute."""
-        try:
-            self.logger.info("Start enable user %s", kwargs["user"])
-            await controller.enable_user(username=kwargs["user"])
-        except JujuError as err:
-            if not overwrite:
-                raise err
+        await controller.revoke(username=user, acl=acl)
         return True
 
 
-class DisableUserCommand(BaseJujuCommand):
-    """Disable user."""
+class RevokeModelCommand(BaseJujuCommand):
+    """Revoke user permission on model."""
 
     async def execute(
         self,
         controller: Controller,
         *args: Any,
-        overwrite: bool = False,
         user: Optional[str] = None,
+        model_uuid: Optional[str] = None,
+        acl: Optional[str] = "read",
         **kwargs: Any,
     ) -> bool:
         """Execute."""
-        try:
-            await controller.disable_user(username=user)
-        except JujuError as err:
-            if not overwrite:
-                raise err
+        await controller.revoke_model(username=user, model_uuid=model_uuid, acl=acl)
         return True
