@@ -34,6 +34,7 @@ def test_fill_parser():
     cmd.fill_parser(parser)
 
     assert parser.add_mutually_exclusive_group.call_count == 1
+    assert parser.add_argument.call_count == 7
     parser.add_argument.assert_has_calls(
         [
             mock.call("--config-get", type=str, help="Single property to get.", required=False),
