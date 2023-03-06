@@ -26,8 +26,8 @@ class TestCMD(BaseCMD):
     help_msg = "Test command"
     overview = "Test command overview"
 
-    # define execute as MagicMock
-    execute = MagicMock()
+    # define run_cli as MagicMock
+    execute_cli = MagicMock()
 
 
 class TestJujuCommand(BaseJujuCommand):

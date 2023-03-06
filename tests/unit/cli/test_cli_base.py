@@ -37,7 +37,7 @@ def test_base_cmd_run(base_cmd):
     """Test run from BaseCMD."""
     parsed_args = argparse.Namespace(**{"test": True})
     base_cmd.before = mock_before = MagicMock()
-    base_cmd.execute = mock_execute = MagicMock()
+    base_cmd.execute_cli = mock_execute = MagicMock()
     base_cmd.format_output = mock_format_output = MagicMock()
     base_cmd.after = mock_after = MagicMock()
 
@@ -128,7 +128,7 @@ async def test_base_juju_cmd_execute(mock_get_filtered_config, mock_asyncio, _, 
     mock_asyncio.get_event_loop.return_value = loop = MagicMock()
     task = loop.create_task.return_value = MagicMock()
 
-    result = base_juju_cmd.execute(parsed_args)
+    result = base_juju_cmd.execute_cli(parsed_args)
 
     mock_get_filtered_config.assert_called_once_with(base_juju_cmd.config, None)
     mock_asyncio.get_event_loop.assert_called_once()
@@ -143,7 +143,7 @@ def test_base_juju_cmd_execute_exception(base_juju_cmd):
     base_juju_cmd.command = None
 
     with pytest.raises(RuntimeError):
-        base_juju_cmd.execute(parsed_args)
+        base_juju_cmd.execute_cli(parsed_args)
 
 
 def _create_test_controller(name: str) -> Controller:

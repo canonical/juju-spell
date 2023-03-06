@@ -50,7 +50,7 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
         try:
             self.before(parsed_args)
             emit.trace(f"function 'before' was run for {self.name} command")
-            retval = self.execute(parsed_args)
+            retval = self.execute_cli(parsed_args)
             emit.trace(f"raw output of {self.name} command: {retval}")
             message = self.format_output(retval)
             emit.message(message)  # print the output
@@ -72,7 +72,7 @@ class BaseCMD(BaseCommand, metaclass=ABCMeta):
         return str(retval)
 
     @abstractmethod
-    def execute(self, parsed_args: argparse.Namespace) -> Any:  # pragma: no cover
+    def execute_cli(self, parsed_args: argparse.Namespace) -> Any:  # pragma: no cover
         """Abstract function need to be defined for each JujuSpell CLI command."""
 
     def before(self, parsed_args: argparse.Namespace) -> None:  # pragma: no cover
@@ -130,7 +130,7 @@ class BaseJujuCMD(BaseCMD, metaclass=ABCMeta):
             help="model filter",
         )
 
-    def execute(self, parsed_args: argparse.Namespace) -> Any:
+    def execute_cli(self, parsed_args: argparse.Namespace) -> Any:
         """Execute Juju Commands."""
         if self.command is None or not issubclass(self.command, BaseJujuCommand):
             raise RuntimeError(f"command `{self.command}` is incorrect")
