@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Command to grant permission for user."""
+import logging
 from typing import Any, List, Optional
 
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand
+from juju_spell.exceptions import JujuSpellError
 
 __all__ = ["GrantCommand", "ACL_CHOICES"]
 
@@ -26,6 +28,8 @@ CONTROLLER_ACL_CHOICES = ["login", "add-model", "superuser"]
 MODEL_ACL_CHOICES = ["read", "write", "admin"]
 
 ACL_CHOICES = CONTROLLER_ACL_CHOICES + MODEL_ACL_CHOICES
+
+logger = logging.getLogger(__name__)
 
 
 class GrantCommand(BaseJujuCommand):
@@ -54,20 +58,39 @@ class GrantCommand(BaseJujuCommand):
         else:
             model_acl = "read"
 
+        logger.info(
+            "Start grant permission %s on controller %s for user %s",
+            controller_acl,
+            controller.uuid,
+            kwargs["user"],
+        )
         result: bool = await controller.grant(username=kwargs["user"], acl=controller_acl)
         if not result:
-            return result
+            raise JujuSpellError(
+                f"Grant user {kwargs['user']} permission {controller_acl}"
+                f" on controller {controller.uuid} fail."
+            )
 
         async for _, model in self.get_filtered_models(
             controller=controller,
             models=models,
             model_mappings=kwargs["controller_config"].model_mapping,
         ):
+            logger.info(
+                "Start grant model %s permission %s on controller %s for user %s",
+                model.uuid,
+                model_acl,
+                controller.uuid,
+                kwargs["user"],
+            )
             grant_model_result: bool = await controller.grant_model(
                 username=kwargs["user"],
                 model_uuid=model.uuid,
                 acl=model_acl,
             )
             if not grant_model_result:
-                return grant_model_result
+                raise JujuSpellError(
+                    f"Grant user {kwargs['user']} permission {model_acl}"
+                    f" on controller {controller.uuid} model {model.uuid} fail."
+                )
         return True

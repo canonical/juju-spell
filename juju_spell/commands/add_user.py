@@ -4,6 +4,7 @@ from typing import Any, Dict, Union
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand, Result
+from juju_spell.commands.enable_user import EnableUserCommand
 from juju_spell.commands.grant import GrantCommand
 from juju_spell.utils import random_password
 
@@ -26,11 +27,16 @@ class AddUserCommand(BaseJujuCommand):
             display_name=kwargs["display_name"],
         )
 
+        enable_cmd = EnableUserCommand()
+        enable_cmd_result = await enable_cmd.run(controller=controller, **kwargs)
+        if not enable_cmd_result.success:
+            return enable_cmd_result
+
         if kwargs.get("acl"):
             grant_cmd = GrantCommand()
-            grant_result: Result = await grant_cmd.run(controller=controller, **kwargs)
-            if not grant_result.success:
-                return grant_result
+            grant_cmd_result: Result = await grant_cmd.run(controller=controller, **kwargs)
+            if not grant_cmd_result.success:
+                return grant_cmd_result
 
         return {
             "user": user.username,

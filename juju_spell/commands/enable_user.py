@@ -19,6 +19,7 @@ from typing import Any
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand
+from juju_spell.exceptions import JujuSpellError
 
 __all__ = ["EnableUserCommand"]
 
@@ -29,4 +30,8 @@ class EnableUserCommand(BaseJujuCommand):
     async def execute(self, controller: Controller, *args: Any, **kwargs: Any) -> bool:
         """Execute."""
         result: bool = await controller.enable_user(username=kwargs["user"])
+        if not result:
+            raise JujuSpellError(
+                f"Enable user {kwargs['user']} on controller {controller.uuid} fail"
+            )
         return result
