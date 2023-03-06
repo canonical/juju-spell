@@ -34,6 +34,24 @@ logger = logging.getLogger(__name__)
 class GrantCommand(BaseJujuCommand):
     """Grant permission for user."""
 
+    def get_controller_acl(self, acl: str) -> str:
+        """Get corresponding controller acl from input acl."""
+        if acl in CONTROLLER_ACL_CHOICES:
+            controller_acl = acl
+        else:
+            controller_acl = "login"
+        return controller_acl
+
+    def get_model_acl(self, acl: str) -> str:
+        """Get corresponding model acl from input acl."""
+        if acl in MODEL_ACL_CHOICES:
+            model_acl = acl
+        elif acl == "superuser":
+            model_acl = "admin"
+        else:
+            model_acl = "read"
+        return model_acl
+
     async def execute(
         self,
         controller: Controller,
@@ -43,19 +61,9 @@ class GrantCommand(BaseJujuCommand):
     ) -> bool:
         """Execute."""
         acl = kwargs["acl"]
-        controller_acl: str
-        model_acl: str
-        if acl in CONTROLLER_ACL_CHOICES:
-            controller_acl = acl
-        else:
-            controller_acl = "login"
 
-        if acl in MODEL_ACL_CHOICES:
-            model_acl = acl
-        elif acl == "superuser":
-            model_acl = "admin"
-        else:
-            model_acl = "read"
+        controller_acl: str = self.get_controller_acl(acl)
+        model_acl: str = self.get_model_acl(acl)
 
         logger.info(
             "Start grant permission %s on controller %s for user %s",
