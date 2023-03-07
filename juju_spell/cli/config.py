@@ -18,8 +18,9 @@
 import argparse
 import logging
 import textwrap
+from argparse import _MutuallyExclusiveGroup
 from pathlib import Path
-from typing import List
+from typing import Any, List, Optional, Sequence, Union
 
 from craft_cli.dispatcher import _CustomArgumentParser
 
@@ -103,7 +104,9 @@ class ConfigCMD(JujuWriteCMD):
         application_group = parser.add_mutually_exclusive_group(required=True)
         self.add_mutually_exclusive_group_parameters(application_group)
 
-    def add_mutually_exclusive_group_parameters(self, application_group) -> None:
+    def add_mutually_exclusive_group_parameters(
+        self, application_group: _MutuallyExclusiveGroup
+    ) -> None:
         """Add mutually exclusive group."""
         application_group.add_argument(
             "--config-file",
@@ -128,12 +131,16 @@ def get_application_config(path: str) -> List[ApplicationConfig]:
     return result
 
 
-# pylint: disable=too-few-public-methods,signature-differs
-# mypy: allow-untyped-defs
 class KeyValue(argparse.Action):
     """Parse parameters as key=value pairs."""
 
-    def __call__(self, parser, namespace, values, option_string=None) -> None:
+    def __call__(
+        self,
+        _: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Union[str, Sequence[Any], None],
+        option_string: Optional[str] = None,
+    ) -> None:
         setattr(namespace, self.dest, {})
         if values:
             for value in values:
