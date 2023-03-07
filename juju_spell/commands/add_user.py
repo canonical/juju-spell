@@ -36,15 +36,23 @@ class AddUserCommand(BaseJujuCommand):
                 raise err
 
         enable_cmd = EnableUserCommand()
-        enable_cmd_result = await enable_cmd.run(controller=controller, **kwargs)
+        enable_cmd_result = await enable_cmd.run(
+            controller=controller, overwrite=overwrite, **kwargs
+        )
         if not enable_cmd_result.success and not overwrite:
             return enable_cmd_result
 
         if kwargs.get("acl"):
-            grant_cmd = GrantCommand()
-            grant_cmd_result: Result = await grant_cmd.run(controller=controller, **kwargs)
-            if not grant_cmd_result.success and not overwrite:
-                return grant_cmd_result
+            try:
+                grant_cmd = GrantCommand()
+                grant_cmd_result: Result = await grant_cmd.run(
+                    controller=controller, overwrite=overwrite, **kwargs
+                )
+                if not grant_cmd_result.success and not overwrite:
+                    return grant_cmd_result
+            except JujuError as err:
+                if not overwrite:
+                    raise err
 
         return {
             "user": user.username,

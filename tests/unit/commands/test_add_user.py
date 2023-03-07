@@ -46,13 +46,13 @@ async def test_add_user_execute(test_config_dict):
 
 
 @pytest.mark.asyncio
-@patch("juju_spell.commands.add_user.GrantCommand")
 @patch("juju_spell.commands.add_user.EnableUserCommand")
+@patch("juju_spell.commands.add_user.GrantCommand")
 @pytest.mark.parametrize(
-    "acl,grant_result",
+    "acl,overwrite,grant_result",
     [
-        ("superuser", Result(success=True)),
-        ("superuser", Result(success=False, error=JujuSpellError())),
+        ("superuser", True, Result(success=True)),
+        ("superuser", False, Result(success=False, error=JujuSpellError())),
     ],
 )
 async def test_add_user_execute_grant(
@@ -60,6 +60,7 @@ async def test_add_user_execute_grant(
     mock_enable_user_cmd,
     test_config_dict,
     acl,
+    overwrite,
     grant_result,
 ):
     """Check if grant cmd has been called when acl is in params."""
@@ -89,6 +90,7 @@ async def test_add_user_execute_grant(
             "display_name": "new-user-display-name",
             "controller_config": controller,
             "acl": acl,
+            "overwrite": overwrite,
         },
     )
 
@@ -100,6 +102,7 @@ async def test_add_user_execute_grant(
             "display_name": "new-user-display-name",
             "controller_config": controller,
             "acl": acl,
+            "overwrite": overwrite,
         },
     )
     if grant_result.success:

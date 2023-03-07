@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Command to grant permission for user."""
-import logging
 from typing import Any, List, Optional
 
 from juju.controller import Controller
+from juju.errors import JujuError
 
 from juju_spell.commands.base import BaseJujuCommand
 
@@ -27,8 +27,6 @@ CONTROLLER_ACL_CHOICES = ["login", "add-model", "superuser"]
 MODEL_ACL_CHOICES = ["read", "write", "admin"]
 
 ACL_CHOICES = CONTROLLER_ACL_CHOICES + MODEL_ACL_CHOICES
-
-logger = logging.getLogger(__name__)
 
 
 class GrantCommand(BaseJujuCommand):
@@ -57,6 +55,7 @@ class GrantCommand(BaseJujuCommand):
         controller: Controller,
         *args: Any,
         models: Optional[List[str]] = None,
+        overwrite: bool = False,
         **kwargs: Any,
     ) -> bool:
         """Execute."""
@@ -65,29 +64,37 @@ class GrantCommand(BaseJujuCommand):
         controller_acl: str = self.get_controller_acl(acl)
         model_acl: str = self.get_model_acl(acl)
 
-        logger.info(
+        self.logger.info(
             "Start grant permission %s on controller %s for user %s",
             controller_acl,
-            controller.uuid,
+            controller.controller_uuid,
             kwargs["user"],
         )
-        await controller.grant(username=kwargs["user"], acl=controller_acl)
+        try:
+            await controller.grant(username=kwargs["user"], acl=controller_acl)
+        except JujuError as err:
+            if not overwrite:
+                raise err
 
         async for _, model in self.get_filtered_models(
             controller=controller,
             models=models,
             model_mappings=kwargs["controller_config"].model_mapping,
         ):
-            logger.info(
-                "Start grant model %s permission %s on controller %s for user %s",
-                model.uuid,
-                model_acl,
-                controller.uuid,
-                kwargs["user"],
-            )
-            await controller.grant_model(
-                username=kwargs["user"],
-                model_uuid=model.uuid,
-                acl=model_acl,
-            )
+            try:
+                self.logger.info(
+                    "Start grant model %s permission %s on controller %s for user %s",
+                    model.uuid,
+                    model_acl,
+                    controller.controller_uuid,
+                    kwargs["user"],
+                )
+                await controller.grant_model(
+                    username=kwargs["user"],
+                    model_uuid=model.uuid,
+                    acl=model_acl,
+                )
+            except JujuError as err:
+                if not overwrite:
+                    raise err
         return True
