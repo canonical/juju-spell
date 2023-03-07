@@ -131,6 +131,7 @@ def get_application_config(path: str) -> List[ApplicationConfig]:
     return result
 
 
+# pylint: disable=too-few-public-methods
 class KeyValue(argparse.Action):
     """Parse parameters as key=value pairs."""
 
