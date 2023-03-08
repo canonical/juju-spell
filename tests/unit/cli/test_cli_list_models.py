@@ -1,10 +1,15 @@
 import os
+from datetime import datetime
 from unittest import mock
 
 import pytest
 import yaml
 
-from juju_spell.cli.list_models import WARNING_HEADING, ListModelsCMD
+from juju_spell.cli.list_models import (
+    DATETIME_FORMATTER,
+    WARNING_HEADING_TEMPLATE,
+    ListModelsCMD,
+)
 
 
 def test_fill_parser():
@@ -18,10 +23,7 @@ def test_fill_parser():
                 "--refresh",
                 default=False,
                 action="store_true",
-                help=(
-                    "This will force refresh all models from the controllers. (TODO: to"
-                    " be implemented)"
-                ),
+                help="This will force refresh all models from the controllers.",
             ),
         ]
     )
@@ -40,8 +42,11 @@ def test_fill_parser():
                     },
                     "success": True,
                     "output": {
+                        "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
+                        "name": "xxx-serverstack",
                         "refresh": True,
                         "models": ["controller", "model-a", "model-b", "model-c"],
+                        "timestamp": 1678256395.5965466,
                     },
                     "error": None,
                 }
@@ -60,12 +65,17 @@ def test_fill_parser():
                     "success": True,
                     "output": {
                         "refresh": False,
+                        "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
+                        "name": "xxx-serverstack",
                         "models": ["controller", "model-a", "model-b"],
+                        "timestamp": 1678256395.5965466,
                     },
                     "error": None,
                 }
             ],
-            WARNING_HEADING,
+            WARNING_HEADING_TEMPLATE.format(
+                datetime.fromtimestamp(1678256395.5965466).strftime(DATETIME_FORMATTER)
+            ),
             {"yyy-serverstack": ["controller", "model-a", "model-b"]},
         ),
     ],
