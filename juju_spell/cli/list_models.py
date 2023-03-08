@@ -28,7 +28,8 @@ from juju_spell.cli.base import JujuReadCMD
 from juju_spell.commands.list_models import ListModelsCommand
 
 WARNING_HEADING_TEMPLATE = (
-    "Use --refresh option with this command to see the latest information.\n\n(Last updated: {})"
+    f"Use --refresh option with this command to see the latest information.{os.linesep*2}"
+    "(Last updated: {})"
 )
 DATETIME_FORMATTER = "%Y-%m-%d %H:%M:%S"
 
@@ -58,7 +59,7 @@ class ListModelsCMD(JujuReadCMD):
         $ juju-spell list-models
         Use --refresh option with this command to see the latest information.
 
-        (Last updated: 1970-01-01 00:00:00)
+        (Last updated: 2004-03-05 00:00:00)
 
         controller-a:
         - model-a
@@ -106,7 +107,7 @@ class ListModelsCMD(JujuReadCMD):
                         "model-c"
                     ],
                     "refresh": true,
-                    "timestamp": 1172969203.1
+                    "timestamp": 1078416000.0
                 },
                 "error": null
             }
