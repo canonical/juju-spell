@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Command entrypoint for ControllerInformationCommand."""
+"""Command entrypoint for ListModelsCommand."""
 import os
 import textwrap
 from datetime import datetime
