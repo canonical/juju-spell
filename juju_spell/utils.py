@@ -25,7 +25,7 @@ import yaml
 
 from juju_spell.exceptions import JujuSpellError
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def strtobool(value: str) -> bool:
