@@ -2,7 +2,6 @@
 from typing import Any, Dict, Union
 
 from juju.controller import Controller
-from juju.errors import JujuError
 
 from juju_spell.commands.base import BaseJujuCommand, Result
 from juju_spell.commands.enable_user import EnableUserCommand
@@ -22,18 +21,17 @@ class AddUserCommand(BaseJujuCommand):
         if len(password) == 0:
             password = random_password()
 
-        try:
+        user = await controller.get_user(username=kwargs["user"])
+        if user is None:  # User exists
             user = await controller.add_user(
                 username=kwargs["user"],
                 password=password,
                 display_name=kwargs["display_name"],
             )
-        except JujuError as err:
-            if overwrite:
-                user = await controller.get_user(username=kwargs["user"])
-                await user.set_password(password)  # Reset user's password
-            else:
-                raise err
+            self.logger.info("Create user %s", kwargs["user"])
+        if overwrite:
+            await user.set_password(password)  # Reset user's password
+            self.logger.info("Reset user password")
 
         enable_cmd = EnableUserCommand()
         enable_cmd_result = await enable_cmd.run(
@@ -43,16 +41,12 @@ class AddUserCommand(BaseJujuCommand):
             return enable_cmd_result
 
         if kwargs.get("acl"):
-            try:
-                grant_cmd = GrantCommand()
-                grant_cmd_result: Result = await grant_cmd.run(
-                    controller=controller, overwrite=overwrite, **kwargs
-                )
-                if not grant_cmd_result.success and not overwrite:
-                    return grant_cmd_result
-            except JujuError as err:
-                if not overwrite:
-                    raise err
+            grant_cmd = GrantCommand()
+            grant_cmd_result: Result = await grant_cmd.run(
+                controller=controller, overwrite=overwrite, **kwargs
+            )
+            if not grant_cmd_result.success and not overwrite:
+                return grant_cmd_result
 
         return {
             "user": user.username,

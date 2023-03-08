@@ -36,6 +36,7 @@ class EnableUserCommand(BaseJujuCommand):
     ) -> bool:
         """Execute."""
         try:
+            self.logger.info("Start enable user %s", kwargs["user"])
             await controller.enable_user(username=kwargs["user"])
         except JujuError as err:
             if not overwrite:

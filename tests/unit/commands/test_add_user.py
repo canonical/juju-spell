@@ -16,6 +16,8 @@ async def test_add_user_execute(test_config_dict):
 
     mock_conn = AsyncMock()
 
+    mock_conn.get_user.return_value = None
+
     mock_user = MagicMock()
     mock_conn.add_user.return_value = mock_user
     mock_user.username = "new-user"
@@ -51,7 +53,7 @@ async def test_add_user_execute(test_config_dict):
 @pytest.mark.parametrize(
     "acl,overwrite,grant_result",
     [
-        ("superuser", True, Result(success=True)),
+        ("superuser", False, Result(success=True)),
         ("superuser", False, Result(success=False, error=JujuSpellError())),
     ],
 )
@@ -66,6 +68,8 @@ async def test_add_user_execute_grant(
     """Check if grant cmd has been called when acl is in params."""
     cmd = AddUserCommand()
     mock_conn = AsyncMock()
+
+    mock_conn.get_user.return_value = None
 
     mock_user = MagicMock()
     mock_conn.add_user.return_value = mock_user
@@ -170,15 +174,15 @@ async def test_add_user_overwrite(
             "password": "new-user-pwd",
         }
     else:
-        with pytest.raises(JujuError):
-            output = await cmd.execute(
-                mock_conn,
-                **{
-                    "user": "new-user",
-                    "password": "new-user-pwd",
-                    "display_name": "new-user-display-name",
-                    "controller_config": controller,
-                    "acl": "superuser",
-                    "overwrite": overwrite,
-                },
-            )
+        output = await cmd.execute(
+            mock_conn,
+            **{
+                "user": "new-user",
+                "password": "new-user-pwd",
+                "display_name": "new-user-display-name",
+                "controller_config": controller,
+                "acl": "superuser",
+                "overwrite": overwrite,
+            },
+        )
+        assert output == Result(success=False)

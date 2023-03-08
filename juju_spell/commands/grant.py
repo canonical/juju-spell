@@ -70,11 +70,7 @@ class GrantCommand(BaseJujuCommand):
             controller.controller_uuid,
             kwargs["user"],
         )
-        try:
-            await controller.grant(username=kwargs["user"], acl=controller_acl)
-        except JujuError as err:
-            if not overwrite:
-                raise err
+        await controller.grant(username=kwargs["user"], acl=controller_acl)
 
         async for _, model in self.get_filtered_models(
             controller=controller,
