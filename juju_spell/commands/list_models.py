@@ -17,12 +17,12 @@ class ListModelsCommand(BaseJujuCommand):
         self, controller: Controller, *args: Any, **kwargs: Any
     ) -> Dict[str, Union[List, bool]]:
         """List models from the local cache or from the controllers."""
-        outputs: Union[JujuSpellError, Dict[str, Any]] = {}
+        outputs: Union[None, Dict[str, Any]] = {}
 
         if not kwargs["refresh"]:
             outputs = load_cache_data(kwargs["controller_config"].uuid, self.logger)
 
-        if kwargs["refresh"] or isinstance(outputs, JujuSpellError):
+        if kwargs["refresh"] or outputs is None:
             models = list(
                 await self.get_filtered_model_names(
                     controller=controller,
@@ -55,13 +55,13 @@ def save_cache_data(
     return cache_data
 
 
-def load_cache_data(uuid: str, logger: Logger) -> Union[JujuSpellError, Dict[str, Any]]:
+def load_cache_data(uuid: str, logger: Logger) -> Union[None, Dict[str, Any]]:
     """Gracefully load cache data from default cache directory."""
+    cache_data = None
     error_message_template = "%s list models failed to load cache: %s."
     try:
         cache_data = load_from_cache(uuid)
         cache_data["refresh"] = False
     except JujuSpellError as error:
         logger.debug(error_message_template, uuid, str(error))
-        return JujuSpellError(error_message_template.format(uuid, str(error)))
     return cache_data
