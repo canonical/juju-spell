@@ -100,13 +100,15 @@ class ListModelsCMD(JujuReadCMD):
                 "output": {
                     "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
                     "name": "xxx-serverstack",
-                    "models": [
-                        "controller",
-                        "model-a",
-                        "model-b",
-                        "model-c"
-                    ],
-                    "refresh": true,
+                    "data": {
+                        "models": [
+                            "controller",
+                            "model-a",
+                            "model-b",
+                            "model-c"
+                        ],
+                        "refresh": true,
+                    },
                     "timestamp": 1078416000.0
                 },
                 "error": null
@@ -118,13 +120,14 @@ class ListModelsCMD(JujuReadCMD):
         controller_models_mapping = {}
 
         heading = ""
-        for outputs in retval:
-            controller_name = outputs["context"]["name"]
-            models = outputs["output"]["models"]
-            refresh = outputs["output"]["refresh"]
+        for content in retval:
+            output = content["output"]
+            controller_name = output["name"]
+            models = output["data"]["models"]
+            refresh = output["data"]["refresh"]
             controller_models_mapping[controller_name] = models
             if not refresh:
-                timestamp = float(outputs["output"]["timestamp"])
+                timestamp = float(output["timestamp"])
                 heading = WARNING_HEADING_TEMPLATE.format(
                     datetime.fromtimestamp(timestamp).strftime(DATETIME_FORMATTER)
                 )

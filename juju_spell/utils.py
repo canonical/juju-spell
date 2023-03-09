@@ -15,10 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities for JujuSpell."""
+import dataclasses
 import logging
 import secrets
 from collections import defaultdict
 from pathlib import Path
+from time import time
 from typing import Any, Dict, Iterable, List, Union
 
 import yaml
@@ -27,6 +29,57 @@ from juju_spell.exceptions import JujuSpellError
 from juju_spell.settings import DEFAULT_CACHE_DIR
 
 logger = logging.getLogger(__name__)
+
+
+class CachePolicy(dict):
+    """Base class for cache policy."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize cache policy."""
+        super().__init__(**kwargs)
+
+    @classmethod
+    def init_from_config(cls, cache_config: Any) -> None:
+        """Load the policy from a user defined policy config."""
+        # raise NotImplementedError("Init from cache config file is not supported yet.")
+
+
+class DefaultCachePolicy(CachePolicy):
+    """A default cache policy used by any cache data."""
+
+    def __init__(self, ttl: float, auto_refresh: bool = True):
+        """Initialize default cache policy."""
+        super().__init__(ttl=ttl, auto_refresh=auto_refresh)
+
+
+@dataclasses.dataclass(frozen=True)
+class CacheContext:
+    """A context for holding cache data."""
+
+    uuid: str
+    name: str
+    data: Dict[str, Any]
+    timestamp: float
+
+
+class Cache(CacheContext):
+    """A cache for command's output with cache policy."""
+
+    policy: DefaultCachePolicy = DefaultCachePolicy(ttl=3600, auto_refresh=True)
+
+    @property
+    def expired(self) -> bool:
+        """Check if the cache is expired or not."""
+        return self.timestamp + self.policy.get("ttl", 3600) < time()
+
+    @property
+    def context(self) -> Dict[str, Any]:
+        """Return the cache context as a dictionary."""
+        return dataclasses.asdict(self)
+
+    def add_policy(self) -> None:
+        """Add more policy to the default policy."""
+        raise NotImplementedError("Add policy is not supported yet.")
 
 
 def strtobool(value: str) -> bool:
@@ -125,28 +178,28 @@ def load_yaml_file(path: Path) -> Any:
         raise JujuSpellError(f"permission denied to read patch file {path}") from error
 
 
-def save_to_cache(data: Dict, uuid: Union[str, Path]) -> None:
-    """Save data to the default cache directory named by the uuid."""
+def save_to_cache(cache: Cache, name: Union[str, Path]) -> None:
+    """Save data to the default cache directory named by `name`."""
     if not DEFAULT_CACHE_DIR.exists():
         DEFAULT_CACHE_DIR.mkdir()
-    fname = DEFAULT_CACHE_DIR / uuid
+    fname = DEFAULT_CACHE_DIR / name
     try:
         with open(fname, "w", encoding="UTF-8") as file:
-            data_string = yaml.safe_dump(data)
-            file.write(data_string)
+            data = yaml.safe_dump(cache.context)
+            file.write(data)
     except PermissionError as error:
         raise JujuSpellError(f"permission denied to write to file `{fname}`.") from error
     except Exception as error:
         raise JujuSpellError(f"{str(error)}.") from error
 
 
-def load_from_cache(uuid: Union[str, Path]) -> Dict[str, Any]:
-    """Load data from the default cache directory named by the uuid."""
-    fname = DEFAULT_CACHE_DIR / uuid
+def load_from_cache(name: Union[str, Path]) -> Cache:
+    """Load data from the default cache directory named by `name`."""
+    fname = DEFAULT_CACHE_DIR / name
     try:
         with open(fname, "r", encoding="UTF-8") as file:
             data = yaml.safe_load(file)
-            return data
+            return Cache(**data)
     except FileNotFoundError as error:
         raise JujuSpellError(f"`{fname}` does not exists.") from error
     except PermissionError as error:

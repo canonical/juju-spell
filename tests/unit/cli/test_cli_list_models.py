@@ -44,8 +44,10 @@ def test_fill_parser():
                     "output": {
                         "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
                         "name": "xxx-serverstack",
-                        "refresh": True,
-                        "models": ["controller", "model-a", "model-b", "model-c"],
+                        "data": {
+                            "refresh": True,
+                            "models": ["controller", "model-a", "model-b", "model-c"],
+                        },
                         "timestamp": 1678256395.5965466,
                     },
                     "error": None,
@@ -64,10 +66,12 @@ def test_fill_parser():
                     },
                     "success": True,
                     "output": {
-                        "refresh": False,
                         "uuid": "03ascsb2-bba8-477b-854e-5715a7sb320a",
-                        "name": "xxx-serverstack",
-                        "models": ["controller", "model-a", "model-b"],
+                        "name": "yyy-serverstack",
+                        "data": {
+                            "refresh": False,
+                            "models": ["controller", "model-a", "model-b"],
+                        },
                         "timestamp": 1678256395.5965466,
                     },
                     "error": None,
