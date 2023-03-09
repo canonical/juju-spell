@@ -91,6 +91,13 @@ class GrantCommand(BaseJujuCommand):
                     acl=model_acl,
                 )
             except JujuError as err:
+                self.logger.info(
+                    "Grant model %s permission %s on controller %s for user %s fail",
+                    model.uuid,
+                    model_acl,
+                    controller.controller_uuid,  # pylint: disable=duplicate-code
+                    kwargs["user"],
+                )
                 if not overwrite:
                     raise err
         return True

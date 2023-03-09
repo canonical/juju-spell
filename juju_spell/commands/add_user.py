@@ -15,23 +15,31 @@ class AddUserCommand(BaseJujuCommand):
     """Add user command."""
 
     async def execute(
-        self, controller: Controller, *args: Any, overwrite: bool = False, **kwargs: Any
+        self,
+        controller: Controller,
+        *args: Any,
+        overwrite: bool = False,
+        **kwargs: Any,
     ) -> Union[Dict[str, str], Result]:
         password = kwargs["password"]
         if len(password) == 0:
             password = random_password()
 
         user = await controller.get_user(username=kwargs["user"])
-        if user is None:  # User exists
+        if user is None:  # User does not exists
             user = await controller.add_user(
                 username=kwargs["user"],
                 password=password,
                 display_name=kwargs["display_name"],
             )
-            self.logger.info("Create user %s", kwargs["user"])
+            self.logger.info("%s create user %s", controller.controller_uuid, kwargs["user"])
         if overwrite:
             await user.set_password(password)  # Reset user's password
-            self.logger.info("Reset user password")
+            self.logger.info(
+                "Controller %s reset user %s password",
+                controller.controller_uuid,
+                kwargs["user"],
+            )
 
         enable_cmd = EnableUserCommand()
         enable_cmd_result = await enable_cmd.run(
