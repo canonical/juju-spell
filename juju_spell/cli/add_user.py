@@ -128,6 +128,8 @@ class AddUserCMD(JujuWriteCMD):
                 },
             ]
         """
+        if not retval[0]["success"]:
+            return JujuWriteCMD.format_output(retval)
         emit.debug(f"formatting `{retval}`")
 
         controllers = []

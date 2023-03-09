@@ -21,6 +21,7 @@ from juju_spell.settings import PERSONAL_CONFIG_PATH
                         "password": "new-user-pwd",
                     },
                     "error": None,
+                    "success": True,
                 }
             ],
             f"Please put user information to personal config({PERSONAL_CONFIG_PATH}):",
