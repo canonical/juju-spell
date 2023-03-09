@@ -74,7 +74,7 @@ async def apply_configuration(kwargs: Dict[str, Any], model: Model) -> Dict[str,
 
 
 def values_only(
-    all_config_of_app: dict[str, Any], *properties: Union[str, None]
+    all_config_of_app: Dict[str, Any], *properties: Union[str, None]
 ) -> Dict[str, str]:
     """Convert juju config output to cleaner.
 
