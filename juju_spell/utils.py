@@ -186,6 +186,7 @@ def save_to_cache(cache: Cache, name: Union[str, Path]) -> None:
     try:
         with open(fname, "w", encoding="UTF-8") as file:
             data = yaml.safe_dump(cache.context)
+            logger.info("save cache file to %s", str(fname))
             file.write(data)
     except PermissionError as error:
         raise JujuSpellError(f"permission denied to write to file `{fname}`.") from error
@@ -199,6 +200,7 @@ def load_from_cache(name: Union[str, Path]) -> Cache:
     try:
         with open(fname, "r", encoding="UTF-8") as file:
             data = yaml.safe_load(file)
+            logger.info("load cache file from %s", str(fname))
             return Cache(**data)
     except FileNotFoundError as error:
         raise JujuSpellError(f"`{fname}` does not exists.") from error

@@ -112,7 +112,8 @@ def test_20_save_cache_data_okay(mock_save_to_cache):
 
     list_models.save_cache_data(Mock(), mock_models, Mock(), mock_logger, Mock())
 
-    mock_logger.debug.assert_not_called()
+    mock_logger.debug.assert_called_once()
+    mock_logger.warning.assert_not_called()
     mock_save_to_cache.assert_called_once()
 
 
@@ -125,30 +126,35 @@ def test_21_save_cache_data_fail(mock_save_to_cache):
     mock_save_to_cache.side_effect = JujuSpellError()
     list_models.save_cache_data(Mock(), mock_models, Mock(), mock_logger, Mock())
 
-    mock_logger.debug.assert_called_once()
+    mock_logger.debug.assert_not_called()
+    mock_logger.warning.assert_called_once()
     mock_save_to_cache.assert_called_once()
 
 
 @patch("juju_spell.commands.list_models.load_from_cache")
 def test_30_load_cache_data_okay(mock_load_from_cache):
     """Test load_cache_data function when load cache is okay."""
+    mock_uuid = Mock()
     mock_name = Mock()
     mock_logger = Mock()
 
-    list_models.load_cache_data(mock_name, mock_logger)
+    list_models.load_cache_data(mock_name, mock_logger, mock_uuid)
 
-    mock_logger.debug.assert_not_called()
+    mock_logger.debug.assert_called_once()
+    mock_logger.warning.assert_not_called()
     mock_load_from_cache.assert_called_once()
 
 
 @patch("juju_spell.commands.list_models.load_from_cache")
 def test_31_load_cache_data_fail(mock_load_from_cache):
     """Test load_cache_data function when load cache is not okay."""
+    mock_uuid = Mock()
     mock_name = Mock()
     mock_logger = Mock()
 
     mock_load_from_cache.side_effect = JujuSpellError()
-    list_models.load_cache_data(mock_name, mock_logger)
+    list_models.load_cache_data(mock_name, mock_logger, mock_uuid)
 
-    mock_logger.debug.assert_called_once()
+    mock_logger.debug.assert_not_called()
+    mock_logger.warning.assert_called_once()
     mock_load_from_cache.assert_called_once()

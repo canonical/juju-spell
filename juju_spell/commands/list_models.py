@@ -21,7 +21,7 @@ class ListModelsCommand(BaseJujuCommand):
 
         if not kwargs["refresh"]:
             fname = f"{self.name}_{kwargs['controller_config'].uuid}"
-            cache = load_cache_data(fname, self.logger)
+            cache = load_cache_data(fname, self.logger, kwargs["controller_config"].uuid)
 
         if kwargs["refresh"] or cache is None or cache.expired:
             models = list(
@@ -54,18 +54,22 @@ def save_cache_data(
     error_message_template = "%s list models failed to save cache: %s."
     try:
         save_to_cache(cache, fname)
+        logger.debug(
+            "%s list models: save result to cache `%s`", controller.controller_uuid, str(fname)
+        )
     except JujuSpellError as error:
-        logger.debug(error_message_template, fname, str(error))
+        logger.warning(error_message_template, controller.controller_uuid, str(error))
     return cache
 
 
-def load_cache_data(fname: str, logger: Logger) -> Union[None, Cache]:
+def load_cache_data(fname: str, logger: Logger, uuid: str) -> Union[None, Cache]:
     """Gracefully load cache data from default cache directory."""
     cache = None
     error_message_template = "%s list models failed to load cache: %s."
     try:
         cache = load_from_cache(fname)
         cache.data["refresh"] = False
+        logger.debug("%s list models: load result from cache `%s`", uuid, str(fname))
     except JujuSpellError as error:
-        logger.debug(error_message_template, fname, str(error))
+        logger.warning(error_message_template, uuid, str(error))
     return cache
