@@ -1,11 +1,12 @@
 """Command to add users."""
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from juju.controller import Controller
 
 from juju_spell.commands.base import BaseJujuCommand, Result
 from juju_spell.commands.enable_user import EnableUserCommand
 from juju_spell.commands.grant import GrantCommand
+from juju_spell.exceptions import JujuSpellError
 from juju_spell.utils import random_password
 
 __all__ = ["AddUserCommand"]
@@ -13,6 +14,16 @@ __all__ = ["AddUserCommand"]
 
 class AddUserCommand(BaseJujuCommand):
     """Add user command."""
+
+    async def pre_check(self, controller: Controller, **kwargs: Any) -> Optional[Result]:
+        if kwargs["user"] == kwargs["controller_config"].user:
+            msg = "User can't add self"
+            return Result(  # pylint: disable=duplicate-code
+                False,
+                error=JujuSpellError(msg),
+                output=msg,
+            )
+        return None
 
     async def execute(
         self,
