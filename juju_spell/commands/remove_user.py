@@ -21,6 +21,7 @@ from juju.controller import Controller
 from juju_spell.commands.base import BaseJujuCommand, Result
 from juju_spell.commands.enable_user import DisableUserCommand
 from juju_spell.commands.revoke import RevokeCommand, RevokeModelCommand
+from juju_spell.exceptions import JujuSpellError
 
 __all__ = ["RemoveUserCommand"]
 
@@ -28,13 +29,22 @@ __all__ = ["RemoveUserCommand"]
 class RemoveUserCommand(BaseJujuCommand):
     """Remove user command."""
 
+    async def pre_check(self, controller: Controller, **kwargs: Any) -> Optional[Result]:
+        if kwargs["user"] == kwargs["controller_config"].user:
+            msg = "User can't remove self"
+            return Result(
+                False,
+                error=JujuSpellError(msg),
+                output=msg,
+            )
+        return None
+
     async def execute(
         self,
         controller: Controller,
         *args: Any,
         models: Optional[List[str]] = None,
         user: Optional[str] = None,
-        overwrite: bool = False,
         **kwargs: Any,
     ) -> Union[bool, Result]:
         """Execute."""
@@ -57,8 +67,6 @@ class RemoveUserCommand(BaseJujuCommand):
                     revoke_model_result.output,
                     revoke_model_result.error,
                 )
-                if not overwrite:
-                    return revoke_model_result
 
         # Revoke
         revoke_cmd = RevokeCommand()
@@ -71,8 +79,6 @@ class RemoveUserCommand(BaseJujuCommand):
                 revoke_result.output,
                 revoke_result.error,
             )
-            if not overwrite:
-                return revoke_result
 
         # Disable
         disable_cmd = DisableUserCommand()
@@ -85,8 +91,6 @@ class RemoveUserCommand(BaseJujuCommand):
                 revoke_result.output,
                 revoke_result.error,
             )
-            if not overwrite:
-                return disable_result
 
         self.logger.info("%s user `%s` was successfully removed", controller.controller_uuid, user)
         return True
