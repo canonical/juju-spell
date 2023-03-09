@@ -20,7 +20,6 @@ import logging
 import secrets
 from collections import defaultdict
 from pathlib import Path
-from time import time
 from typing import Any, Dict, Iterable, List, Union
 
 import yaml
@@ -29,27 +28,6 @@ from juju_spell.exceptions import JujuSpellError
 from juju_spell.settings import DEFAULT_CACHE_DIR
 
 logger = logging.getLogger(__name__)
-
-
-class CachePolicy(dict):
-    """Base class for cache policy."""
-
-    def __init__(self, **kwargs: Any):
-        """Initialize cache policy."""
-        super().__init__(**kwargs)
-
-    @classmethod
-    def init_from_config(cls, cache_config: Any) -> None:
-        """Load the policy from a user defined policy config."""
-        # raise NotImplementedError("Init from cache config file is not supported yet.")
-
-
-class DefaultCachePolicy(CachePolicy):
-    """A default cache policy used by any cache data."""
-
-    def __init__(self, ttl: float, auto_refresh: bool = True):
-        """Initialize default cache policy."""
-        super().__init__(ttl=ttl, auto_refresh=auto_refresh)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -64,13 +42,6 @@ class CacheContext:
 
 class Cache(CacheContext):
     """A cache for command's output with cache policy."""
-
-    policy: DefaultCachePolicy = DefaultCachePolicy(ttl=3600, auto_refresh=True)
-
-    @property
-    def expired(self) -> bool:
-        """Check if the cache is expired or not."""
-        return self.timestamp + self.policy.get("ttl", 3600) < time()
 
     @property
     def context(self) -> Dict[str, Any]:

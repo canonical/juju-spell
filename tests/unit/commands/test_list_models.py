@@ -32,32 +32,6 @@ async def test_execute_with_refresh(mock_load_from_cache, mock_save_to_cache):
 @pytest.mark.asyncio
 @patch("juju_spell.commands.list_models.save_to_cache")
 @patch("juju_spell.commands.list_models.load_from_cache")
-async def test_10_execute_without_refresh_has_cache(mock_load_from_cache, mock_save_to_cache):
-    """Test execute function for ListModelsCommand without --refresh and have existing cache."""
-    mock_controller = AsyncMock()
-    mock_controller_config = Mock()
-    list_models = ListModelsCommand()
-
-    mock_cache = Mock()
-    mock_cache.data = {"models": []}
-    mock_cache.expired = False
-    mock_load_from_cache.return_value = mock_cache
-
-    await list_models.execute(
-        controller=mock_controller,
-        refresh=False,
-        controller_config=mock_controller_config,
-        models=None,
-    )
-
-    mock_save_to_cache.assert_not_called()
-    mock_load_from_cache.assert_called_once()
-    mock_controller.list_models.assert_not_awaited()
-
-
-@pytest.mark.asyncio
-@patch("juju_spell.commands.list_models.save_to_cache")
-@patch("juju_spell.commands.list_models.load_from_cache")
 async def test_11_execute_without_refresh_no_cache(mock_load_from_cache, mock_save_to_cache):
     """Test execute function for ListModelsCommand without --refresh and no existing cache."""
     mock_controller = AsyncMock()
@@ -65,32 +39,6 @@ async def test_11_execute_without_refresh_no_cache(mock_load_from_cache, mock_sa
     list_models = ListModelsCommand()
 
     mock_load_from_cache.side_effect = JujuSpellError()
-
-    await list_models.execute(
-        controller=mock_controller,
-        refresh=False,
-        controller_config=mock_controller_config,
-        models=None,
-    )
-
-    mock_save_to_cache.assert_called_once()
-    mock_load_from_cache.assert_called_once()
-    mock_controller.list_models.assert_awaited_once()
-
-
-@pytest.mark.asyncio
-@patch("juju_spell.commands.list_models.save_to_cache")
-@patch("juju_spell.commands.list_models.load_from_cache")
-async def test_12_execute_without_refresh_expired_cache(mock_load_from_cache, mock_save_to_cache):
-    """Test execute function for ListModelsCommand without --refresh and have expired cache."""
-    mock_controller = AsyncMock()
-    mock_controller_config = Mock()
-    list_models = ListModelsCommand()
-
-    mock_cache = Mock()
-    mock_cache.data = {"models": []}
-    mock_cache.expired = True
-    mock_load_from_cache.return_value = mock_cache
 
     await list_models.execute(
         controller=mock_controller,

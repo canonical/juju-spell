@@ -23,7 +23,7 @@ class ListModelsCommand(BaseJujuCommand):
             fname = f"{self.name}_{kwargs['controller_config'].uuid}"
             cache = load_cache_data(fname, self.logger, kwargs["controller_config"].uuid)
 
-        if kwargs["refresh"] or cache is None or cache.expired:
+        if kwargs["refresh"] or cache is None:
             models = list(
                 await self.get_filtered_model_names(
                     controller=controller,
