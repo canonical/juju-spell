@@ -18,7 +18,6 @@
 import argparse
 import logging
 import textwrap
-from argparse import _MutuallyExclusiveGroup
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
@@ -88,9 +87,14 @@ class ConfigCMD(JujuWriteCMD):
         """Add arguments specific to the export-login command."""
         super().fill_parser(parser)
         parser.add_argument(
-            "--config-get",
-            required=False,
+            "config-app",
+            nargs="?",
+            help="The application to show/update configuration.",
+        )
+        parser.add_argument(
+            "config-get",
             type=str,
+            nargs="?",
             help="Single property to get.",
         )
         parser.add_argument(
@@ -100,24 +104,11 @@ class ConfigCMD(JujuWriteCMD):
             action=KeyValue,
             help="key=value pairs to update application config.",
         )
-
-        application_group = parser.add_mutually_exclusive_group(required=True)
-        self.add_mutually_exclusive_group_parameters(application_group)
-
-    def add_mutually_exclusive_group_parameters(
-        self, application_group: _MutuallyExclusiveGroup
-    ) -> None:
-        """Add mutually exclusive group."""
-        application_group.add_argument(
+        parser.add_argument(
             "--config-file",
             type=get_application_config,
             required=False,
             help="The path to yaml-formatted application config.",
-        )
-        application_group.add_argument(
-            "--config-app",
-            required=False,
-            help="The application to show/update configuration.",
         )
 
 

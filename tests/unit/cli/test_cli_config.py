@@ -33,38 +33,32 @@ def test_fill_parser():
     cmd = ConfigCMD(None)
     cmd.fill_parser(parser)
 
-    assert parser.add_mutually_exclusive_group.call_count == 1
-    assert parser.add_argument.call_count == 7
+    assert parser.add_argument.call_count == 9
     parser.add_argument.assert_has_calls(
         [
-            mock.call("--config-get", type=str, help="Single property to get.", required=False),
+            mock.call(
+                "config-app",
+                nargs="?",
+                help="The application to show/update configuration.",
+            ),
+            mock.call(
+                "config-get",
+                type=str,
+                nargs="?",
+                help="Single property to get.",
+            ),
             mock.call(
                 "--config-set",
                 nargs="*",
-                help="key=value pairs to update application config.",
                 required=False,
                 action=KeyValue,
+                help="key=value pairs to update application config.",
             ),
-        ]
-    )
-
-
-def test_add_mutually_exclusive_group_parameters() -> None:
-    application_group = mock.MagicMock(spec=argparse._MutuallyExclusiveGroup)
-    cmd = ConfigCMD(None)
-    cmd.add_mutually_exclusive_group_parameters(application_group)
-    application_group.add_argument.assert_has_calls(
-        [
             mock.call(
                 "--config-file",
                 type=get_application_config,
                 required=False,
                 help="The path to yaml-formatted application config.",
-            ),
-            mock.call(
-                "--config-app",
-                required=False,
-                help="The application to show/update configuration.",
             ),
         ]
     )
