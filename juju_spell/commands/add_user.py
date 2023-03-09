@@ -36,7 +36,7 @@ class AddUserCommand(BaseJujuCommand):
         if overwrite:
             await user.set_password(password)  # Reset user's password
             self.logger.info(
-                "Controller %s reset user %s password",
+                "%s reset user %s password",
                 controller.controller_uuid,
                 kwargs["user"],
             )

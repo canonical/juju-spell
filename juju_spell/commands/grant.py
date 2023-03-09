@@ -65,9 +65,9 @@ class GrantCommand(BaseJujuCommand):
         model_acl: str = self.get_model_acl(acl)
 
         self.logger.info(
-            "Start grant permission %s on controller %s for user %s",
-            controller_acl,
+            "%s Start grant permission %s for user %s",
             controller.controller_uuid,
+            controller_acl,
             kwargs["user"],
         )
         await controller.grant(username=kwargs["user"], acl=controller_acl)
@@ -79,10 +79,10 @@ class GrantCommand(BaseJujuCommand):
         ):
             try:
                 self.logger.info(
-                    "Start grant model %s permission %s on controller %s for user %s",
+                    "%s Start grant model %s permission %s for user %s",
+                    controller.controller_uuid,
                     model.uuid,
                     model_acl,
-                    controller.controller_uuid,
                     kwargs["user"],
                 )
                 await controller.grant_model(
@@ -92,10 +92,10 @@ class GrantCommand(BaseJujuCommand):
                 )
             except JujuError as err:
                 self.logger.info(
-                    "Grant model %s permission %s on controller %s for user %s fail",
+                    "%s Grant model %s permission %s for user %s fail",
+                    controller.controller_uuid,  # pylint: disable=duplicate-code
                     model.uuid,
                     model_acl,
-                    controller.controller_uuid,  # pylint: disable=duplicate-code
                     kwargs["user"],
                 )
                 if not overwrite:

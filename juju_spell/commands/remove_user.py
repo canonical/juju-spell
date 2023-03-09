@@ -60,7 +60,7 @@ class RemoveUserCommand(BaseJujuCommand):
             )
             if not revoke_model_result.success:
                 self.logger.warning(
-                    "Controller: %s model %s revoke model user %s fail. %s %s",
+                    "%s model %s revoke model user %s fail. %s %s",
                     controller.controller_uuid,
                     model.uuid,
                     user,
@@ -73,7 +73,7 @@ class RemoveUserCommand(BaseJujuCommand):
         revoke_result = await revoke_cmd.run(controller=controller, user=user, acl="login")
         if not revoke_result.success:
             self.logger.warning(
-                "Controller: %s revoke user %s fail %s %s",
+                "%s revoke user %s fail %s %s",
                 controller.controller_uuid,
                 user,
                 revoke_result.output,
@@ -85,7 +85,7 @@ class RemoveUserCommand(BaseJujuCommand):
         disable_result = await disable_cmd.run(controller=controller, user=user)
         if not disable_result.success:
             self.logger.warning(
-                "Controller: %s disable user %s fail %s %s",
+                "%s disable user %s fail %s %s",
                 controller.controller_uuid,
                 user,
                 revoke_result.output,
