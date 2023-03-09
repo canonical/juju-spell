@@ -34,15 +34,10 @@ class RemoveUserCommand(BaseJujuCommand):
         *args: Any,
         models: Optional[List[str]] = None,
         user: Optional[str] = None,
+        overwrite: bool = False,
         **kwargs: Any,
     ) -> Union[bool, Result]:
         """Execute."""
-        # Revoke
-        revoke_cmd = RevokeCommand()
-        revoke_result = await revoke_cmd.run(controller=controller, user=user, acl="login")
-        if not revoke_result.success:
-            return revoke_result
-
         # Revoke model
         revoke_model_cmd = RevokeModelCommand()
         async for _, model in self.get_filtered_models(
@@ -54,13 +49,44 @@ class RemoveUserCommand(BaseJujuCommand):
                 controller=controller, user=user, model_uuid=model.uuid, acl="read"
             )
             if not revoke_model_result.success:
-                return revoke_model_result
+                self.logger.warning(
+                    "Controller: %s model %s revoke model user %s fail. %s %s",
+                    controller.controller_uuid,
+                    model.uuid,
+                    user,
+                    revoke_model_result.output,
+                    revoke_model_result.error,
+                )
+                if not overwrite:
+                    return revoke_model_result
+
+        # Revoke
+        revoke_cmd = RevokeCommand()
+        revoke_result = await revoke_cmd.run(controller=controller, user=user, acl="login")
+        if not revoke_result.success:
+            self.logger.warning(
+                "Controller: %s revoke user %s fail %s %s",
+                controller.controller_uuid,
+                user,
+                revoke_result.output,
+                revoke_result.error,
+            )
+            if not overwrite:
+                return revoke_result
 
         # Disable
         disable_cmd = DisableUserCommand()
         disable_result = await disable_cmd.run(controller=controller, user=user)
         if not disable_result.success:
-            return disable_result
+            self.logger.warning(
+                "Controller: %s disable user %s fail %s %s",
+                controller.controller_uuid,
+                user,
+                revoke_result.output,
+                revoke_result.error,
+            )
+            if not overwrite:
+                return disable_result
 
         self.logger.info("%s user `%s` was successfully removed", controller.controller_uuid, user)
         return True

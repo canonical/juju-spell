@@ -36,9 +36,18 @@ class EnableUserCommand(BaseJujuCommand):
     ) -> bool:
         """Execute."""
         try:
-            self.logger.info("Start enable user %s", kwargs["user"])
+            self.logger.info(
+                "Controller %s start enable user %s",
+                controller.controller_uuid,
+                kwargs["user"],
+            )
             await controller.enable_user(username=kwargs["user"])
         except JujuError as err:
+            self.logger.info(
+                "Controller %s start enable user %s fail",
+                controller.controller_uuid,
+                kwargs["user"],
+            )
             if not overwrite:
                 raise err
         return True
@@ -57,8 +66,18 @@ class DisableUserCommand(BaseJujuCommand):
     ) -> bool:
         """Execute."""
         try:
+            self.logger.info(
+                "Controller %s start disable user %s",
+                controller.controller_uuid,
+                kwargs["user"],
+            )
             await controller.disable_user(username=user)
         except JujuError as err:
+            self.logger.warning(
+                "Controller %s disable user %s fail",
+                controller.controller_uuid,
+                kwargs["user"],
+            )
             if not overwrite:
                 raise err
         return True
