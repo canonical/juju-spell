@@ -38,7 +38,7 @@ class ConfigCommand(BaseJujuCommand):
                 config = await apply_configuration(kwargs, model)
                 output[name] = config
         except InvalidStatusCode:
-            emit.error(f"{controller.controller_uuid} unable to connect model")
+            emit.message(f"{controller.controller_uuid} unable to connect model")
 
         return output
 
