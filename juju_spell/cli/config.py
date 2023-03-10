@@ -40,7 +40,7 @@ class ConfigCMD(JujuWriteCMD):
         The config command gets or sets the config options on applications.
 
         Example:
-        $ juju-spell config --config-app nova-compute
+        $ juju-spell config nova-compute
         [
          {
           "context": {
@@ -50,13 +50,9 @@ class ConfigCMD(JujuWriteCMD):
           "output": {
             "my_model": {
               "my_application": {
-                "config_item": {
-                  "default": "",
-                  "description": "",
-                  "source": "",
-                  "type": "",
-                  "value": ""
-                },
+                "config_item": "config_value",
+                "config1_item": "config1_value",
+                "config2_item": "config2_value",
               }
             }
            }
@@ -65,8 +61,8 @@ class ConfigCMD(JujuWriteCMD):
          }
         ]
 
-        $ juju-spell config --config-app nova-compute --config-get config_item
-        $ juju-spell config --config-app nova-compute --config-set "a=1" "b=3"
+        $ juju-spell config nova-compute config_item
+        $ juju-spell config nova-compute --config-set "a=1" "b=3"
 
         With --file option multiple application configurations can be changed.
         $ juju-spell config --config-file config.yaml

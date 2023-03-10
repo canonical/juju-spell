@@ -103,12 +103,9 @@ def values_only(
     """
     new_values: Dict[str, str] = {}
     for key, value in all_config_of_app.items():
-        new_values[key] = value.get("value")
+        if not properties or key in properties:
+            new_values[key] = value.get("value")
 
-    if properties:
-        for key in all_config_of_app.keys():
-            if key not in properties:
-                new_values.pop(key)
     return new_values
 
 
