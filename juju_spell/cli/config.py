@@ -84,7 +84,7 @@ class ConfigCMD(JujuWriteCMD):
     command = ConfigCommand
 
     def fill_parser(self, parser: _CustomArgumentParser) -> None:
-        """Add arguments specific to the export-login command."""
+        """Add arguments specific to the config command."""
         super().fill_parser(parser)
         parser.add_argument(
             "config-app",

@@ -47,7 +47,6 @@ class MockApp:
 
     async def set_config(self, props: Dict[str, str]):
         for key, value in props.items():
-            print(key)
             if key in self.properties.keys():
                 self.properties[key]["value"] = value
 
