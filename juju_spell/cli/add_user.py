@@ -128,13 +128,13 @@ class AddUserCMD(JujuWriteCMD):
                 },
             ]
         """
-        if not retval[0]["success"]:
-            return JujuWriteCMD.format_output(retval)
         emit.debug(f"formatting `{retval}`")
 
         controllers = []
 
         for controller_output in retval:
+            if not controller_output["success"]:
+                return JujuWriteCMD.format_output(retval)
             output = {
                 "uuid": controller_output["context"]["uuid"],
                 "name": controller_output["context"]["name"],
