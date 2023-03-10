@@ -67,7 +67,7 @@ class DisableUserCommand(BaseJujuCommand):
         """Execute."""
         try:
             self.logger.info(
-                "Controller %s start disable user %s",
+                "%s start disable user %s",
                 controller.controller_uuid,
                 kwargs["user"],
             )
