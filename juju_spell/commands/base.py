@@ -133,7 +133,6 @@ class BaseJujuCommand(metaclass=ABCMeta):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         **kwargs: Any,
     ) -> Any:  # pragma: no cover
         """Execute function.

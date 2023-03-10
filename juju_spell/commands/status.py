@@ -11,7 +11,7 @@ class StatusCommand(BaseJujuCommand):
     """Command to show status for models."""
 
     async def execute(
-        self, controller: Controller, *args: Any, models: Optional[List[str]] = None, **kwargs: Any
+        self, controller: Controller, models: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, FullStatus]:
         """Get status for selected models in controller."""
         output = {}

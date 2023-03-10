@@ -30,7 +30,6 @@ class EnableUserCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         overwrite: bool = False,
         **kwargs: Any,
     ) -> bool:
@@ -59,7 +58,6 @@ class DisableUserCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         overwrite: bool = False,
         user: Optional[str] = None,
         **kwargs: Any,

@@ -28,7 +28,6 @@ class AddUserCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         overwrite: bool = False,
         **kwargs: Any,
     ) -> Union[Dict[str, str], Result]:

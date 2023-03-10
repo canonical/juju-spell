@@ -77,12 +77,7 @@ class Updates:
 class UpdatePackagesCommand(BaseJujuCommand):
     """Update packages command."""
 
-    async def execute(
-        self,
-        controller: Controller,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:  # pragma: no cover
+    async def execute(self, controller: Controller, **kwargs: Any) -> Any:  # pragma: no cover
         """Run update."""
         self.logger.info("Running execute on controller %s", controller.controller_name)
         return await self.make_updates(

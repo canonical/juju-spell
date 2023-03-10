@@ -10,12 +10,7 @@ from juju_spell.commands.base import BaseJujuCommand
 class ShowControllerCommand(BaseJujuCommand):
     """Command to show a controller."""
 
-    async def execute(
-        self,
-        controller: Controller,
-        *args: Any,
-        **kwargs: Any,
-    ) -> ControllerAPIInfoResults:
+    async def execute(self, controller: Controller, **kwargs: Any) -> ControllerAPIInfoResults:
         """Execute main code.
 
         Changed name because this has to override base_command.

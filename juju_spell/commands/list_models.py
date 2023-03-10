@@ -13,9 +13,7 @@ from juju_spell.utils import Cache, load_from_cache, save_to_cache
 class ListModelsCommand(BaseJujuCommand):
     """Command to list models from the local cache or from the controllers."""
 
-    async def execute(
-        self, controller: Controller, *args: Any, **kwargs: Any
-    ) -> Dict[str, Union[List, bool]]:
+    async def execute(self, controller: Controller, **kwargs: Any) -> Dict[str, Union[List, bool]]:
         """List models from the local cache or from the controllers."""
         cache: Union[None, Cache] = None
 

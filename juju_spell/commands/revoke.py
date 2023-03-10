@@ -29,7 +29,6 @@ class RevokeCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         user: Optional[str] = None,
         acl: Optional[str] = "login",
         **kwargs: Any,
@@ -45,7 +44,6 @@ class RevokeModelCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         user: Optional[str] = None,
         model_uuid: Optional[str] = None,
         acl: Optional[str] = "read",

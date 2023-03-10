@@ -42,7 +42,6 @@ class RemoveUserCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         models: Optional[List[str]] = None,
         user: Optional[str] = None,
         **kwargs: Any,

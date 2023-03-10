@@ -25,7 +25,7 @@ class ApplicationConfig:
 class ConfigCommand(BaseJujuCommand):
     """Command to configure juju applications."""
 
-    async def execute(self, controller: Controller, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, controller: Controller, **kwargs: Any) -> Dict[str, Any]:
         """Configure juju applications."""
         output: Dict[str, Any] = {}
         try:

@@ -53,7 +53,6 @@ class GrantCommand(BaseJujuCommand):
     async def execute(
         self,
         controller: Controller,
-        *args: Any,
         models: Optional[List[str]] = None,
         overwrite: bool = False,
         **kwargs: Any,
