@@ -82,7 +82,7 @@ class Cache(metaclass=ABCMeta):
         """Connect to the cache backend, need to implement by the subclass."""
 
 
-@dataclasses.dataclass(slots=True)
+@dataclasses.dataclass()
 class FileCacheContext:
     """A context for holding file cache data."""
 
