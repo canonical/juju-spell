@@ -33,8 +33,11 @@ from juju_spell.settings import DEFAULT_CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_TTL_RULE = 3600  # in seconds
+DEFAULT_AUTO_REFRESH_RULE = True
 
-class CachePolicy(dict):
+
+class BaseCachePolicy(dict):
     """Base class for cache policy."""
 
     def __init__(self, **kwargs: Any):
@@ -46,7 +49,7 @@ class CachePolicy(dict):
         """Load the policy from a user defined policy config."""
 
 
-class DefaultCachePolicy(CachePolicy):
+class DefaultCachePolicy(BaseCachePolicy):
     """A default cache policy used by any cache data."""
 
     def __init__(self, ttl: float, auto_refresh: bool = True):
@@ -57,7 +60,9 @@ class DefaultCachePolicy(CachePolicy):
 class Cache(metaclass=ABCMeta):
     """A cache for command's output with cache policy."""
 
-    policy: DefaultCachePolicy = DefaultCachePolicy(ttl=3600, auto_refresh=True)
+    policy: DefaultCachePolicy = DefaultCachePolicy(
+        ttl=DEFAULT_TTL_RULE, auto_refresh=DEFAULT_AUTO_REFRESH_RULE
+    )
 
     @property
     @abstractmethod
@@ -73,7 +78,7 @@ class Cache(metaclass=ABCMeta):
         """Update the cache's data, need to implement by the subclass."""
 
     @abstractmethod
-    def commit(self) -> Any:
+    def commit(self) -> None:
         """Commit the changes to the cache, need to implement by the subclass."""
 
     @classmethod
@@ -88,7 +93,7 @@ class FileCacheContext:
 
     uuid: str = ""
     name: str = ""
-    data: Dict[str, Any] = dataclasses.field(default_factory=lambda: {})
+    data: Dict[str, Any] = dataclasses.field(default_factory=dict)
     timestamp: float = time()
 
 
