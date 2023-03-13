@@ -120,12 +120,11 @@ class FileCache(Cache, FileCacheContext):
         """Commit file cache to the default cache directory named by `name`."""
         if not self.cache_directory.exists():
             self.cache_directory.mkdir()
-        if self.cache_name == "" and name == "":
+        self.cache_name = name or self.cache_name
+        if self.cache_name == "":
             raise JujuSpellError(
                 "failed to write commit file cache: missing 'name' for file cache."
             )
-        if name:
-            self.cache_name = name
         fname = self.cache_directory / self.cache_name
         try:
             with open(fname, "w", encoding="UTF-8") as file:
