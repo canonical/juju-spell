@@ -37,32 +37,22 @@ DEFAULT_TTL_RULE = 3600  # in seconds
 DEFAULT_AUTO_REFRESH_RULE = True
 
 
-class BaseCachePolicy(dict):
-    """Base class for cache policy."""
+@dataclasses.dataclass()
+class CachePolicy:
+    """A class for cache policy."""
 
-    def __init__(self, **kwargs: Any):
-        """Initialize cache policy."""
-        super().__init__(**kwargs)
+    ttl: int = DEFAULT_TTL_RULE
+    auto_refresh: bool = DEFAULT_AUTO_REFRESH_RULE
 
     @classmethod
     def init_from_config(cls, cache_config: Any) -> None:
         """Load the policy from a user defined policy config."""
 
 
-class DefaultCachePolicy(BaseCachePolicy):
-    """A default cache policy used by any cache data."""
-
-    def __init__(self, ttl: float, auto_refresh: bool = True):
-        """Initialize default cache policy."""
-        super().__init__(ttl=ttl, auto_refresh=auto_refresh)
-
-
 class Cache(metaclass=ABCMeta):
     """A cache for command's output with cache policy."""
 
-    policy: DefaultCachePolicy = DefaultCachePolicy(
-        ttl=DEFAULT_TTL_RULE, auto_refresh=DEFAULT_AUTO_REFRESH_RULE
-    )
+    policy: CachePolicy = CachePolicy()
 
     @property
     @abstractmethod
@@ -106,7 +96,7 @@ class FileCache(Cache, FileCacheContext):
     @property
     def expired(self) -> bool:
         """Check if the cache is expired or not."""
-        return self.timestamp + self.policy["ttl"] < time()
+        return self.timestamp + self.policy.ttl < time()
 
     @property
     def context(self) -> Dict[str, Any]:
