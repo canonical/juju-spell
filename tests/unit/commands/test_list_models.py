@@ -148,6 +148,11 @@ async def test_30_load_cache_data_okay(mock_connect):
     mock_controller_config = Mock()
     list_models = ListModelsCommand()
 
+    mock_cache = Mock()
+    mock_cache.data = {"models": []}
+    mock_cache.need_refresh = False
+    mock_connect.return_value = mock_cache
+
     await list_models.execute(
         controller=mock_controller,
         refresh=False,
@@ -159,21 +164,28 @@ async def test_30_load_cache_data_okay(mock_connect):
 
 
 @pytest.mark.asyncio
+@patch.object(juju_spell.commands.list_models.FileCache, "commit")
 @patch.object(juju_spell.commands.list_models.FileCache, "connect")
-async def test_31_load_cache_data_fail(mock_connect):
+async def test_31_load_cache_data_fail(mock_connect, mock_commit):
     """Test load_cache_data function when load cache is not okay."""
     mock_controller = AsyncMock()
     mock_controller_config = Mock()
     list_models = ListModelsCommand()
     list_models.logger = Mock()
 
+    mock_cache = Mock()
+    mock_cache.data = {"models": []}
+    mock_cache.need_refresh = False
+    mock_connect.return_value = mock_cache
+
     mock_connect.side_effect = JujuSpellError()
 
     await list_models.execute(
         controller=mock_controller,
-        refresh=True,
+        refresh=False,
         controller_config=mock_controller_config,
         models=None,
     )
 
+    mock_commit.assert_called_once()
     list_models.logger.warning.assert_called_once()
