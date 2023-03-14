@@ -15,12 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities for JujuSpell."""
+from __future__ import annotations
+
 import dataclasses
 import logging
 import secrets
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Union
+from time import time
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import yaml
 
@@ -29,28 +33,131 @@ from juju_spell.settings import DEFAULT_CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
-
-@dataclasses.dataclass(frozen=True)
-class CacheContext:
-    """A context for holding cache data."""
-
-    uuid: str
-    name: str
-    data: Dict[str, Any]
-    timestamp: float
+DEFAULT_TTL_RULE = 3600  # in seconds
+DEFAULT_AUTO_REFRESH_RULE = True
 
 
-class Cache(CacheContext):
+@dataclasses.dataclass()
+class CachePolicy:
+    """A class for cache policy."""
+
+    ttl: int = DEFAULT_TTL_RULE
+    auto_refresh: bool = DEFAULT_AUTO_REFRESH_RULE
+
+    @classmethod
+    def init_from_config(cls, cache_config: Any) -> None:
+        """Load the policy from a user defined policy config."""
+
+
+class Cache(metaclass=ABCMeta):
     """A cache for command's output with cache policy."""
+
+    policy: CachePolicy = CachePolicy()
+
+    @property
+    @abstractmethod
+    def expired(self) -> bool:
+        """Check if the cache is expired or not."""
+
+    @abstractmethod
+    def get(self, key: str) -> Any:
+        """Get data from the cache, need to implement by the subclass."""
+
+    @abstractmethod
+    def put(self, key: str, value: Any) -> None:
+        """Update the cache's data, need to implement by the subclass."""
+
+    @abstractmethod
+    def commit(self) -> None:
+        """Commit the changes to the cache, need to implement by the subclass."""
+
+    @classmethod
+    @abstractmethod
+    def connect(cls, backend: Any) -> Any:
+        """Connect to the cache backend, need to implement by the subclass."""
+
+
+@dataclasses.dataclass()
+class FileCacheContext:
+    """A context for holding file cache data."""
+
+    uuid: str = ""
+    name: str = ""
+    data: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    timestamp: float = time()
+
+
+class FileCache(Cache, FileCacheContext):
+    """Create a cache file to store the data."""
+
+    cache_name: Union[str, Path] = ""
+    cache_directory: Path = DEFAULT_CACHE_DIR
+
+    @property
+    def expired(self) -> bool:
+        """Check if the cache is expired or not."""
+        return self.timestamp + self.policy.ttl < time()
+
+    @property
+    def need_refresh(self) -> bool:
+        """Check if the cache needs refresh or not."""
+        return self.expired and self.policy.auto_refresh
 
     @property
     def context(self) -> Dict[str, Any]:
-        """Return the cache context as a dictionary."""
+        """Get the file cache context as a dictionary."""
         return dataclasses.asdict(self)
 
-    def add_policy(self) -> None:
-        """Add more policy to the default policy."""
-        raise NotImplementedError("Add policy is not supported yet.")
+    def put(self, key: str, value: Any) -> None:
+        """Change file cache data."""
+        setattr(self, key, value)
+
+    def get(self, key: str) -> Any:
+        """Get data from the file cache."""
+        return getattr(self, key)
+
+    def update(self, **kwargs: Any) -> None:
+        """Update file cache data in a batch."""
+        for key, value in kwargs.items():
+            self.put(key, value)
+
+    def commit(self, name: Optional[Union[str, Path]] = "") -> None:
+        """Commit file cache to the default cache directory named by `name`."""
+        if not self.cache_directory.exists():
+            self.cache_directory.mkdir()
+        self.cache_name = name or self.cache_name
+        if self.cache_name == "":
+            raise JujuSpellError(
+                "failed to write commit file cache: missing 'name' for file cache."
+            )
+        fname = self.cache_directory / self.cache_name
+        try:
+            with open(fname, "w", encoding="UTF-8") as file:
+                data = yaml.safe_dump(self.context)
+                logger.debug("save cache file to %s", str(fname))
+                file.write(data)
+        except PermissionError as error:
+            raise JujuSpellError(f"permission denied to write to file `{fname}`.") from error
+        except Exception as error:
+            raise JujuSpellError(f"{str(error)}.") from error
+
+    @classmethod
+    def connect(cls, backend: Union[str, Path]) -> FileCache:
+        """Connect to file cache in the default cache directory named by `backend`."""
+        cls.cache_name = cls.cache_directory / backend
+        try:
+            with open(cls.cache_name, "r", encoding="UTF-8") as file:
+                data = yaml.safe_load(file)
+                logger.debug("load cache file from %s", str(cls.cache_name))
+                return cls(**data)
+        except FileNotFoundError as error:
+            raise JujuSpellError(f"`{cls.cache_name}` does not exists.") from error
+        except PermissionError as error:
+            raise JujuSpellError(
+                f"permission denied to read from file `{cls.cache_name}`."
+            ) from error
+        except Exception as error:
+            raise JujuSpellError(f"{str(error)}.") from error
 
 
 def strtobool(value: str) -> bool:
@@ -147,35 +254,3 @@ def load_yaml_file(path: Path) -> Any:
         raise JujuSpellError(f"patch file {path} does not exist") from error
     except PermissionError as error:
         raise JujuSpellError(f"permission denied to read patch file {path}") from error
-
-
-def save_to_cache(cache: Cache, name: Union[str, Path]) -> None:
-    """Save data to the default cache directory named by `name`."""
-    if not DEFAULT_CACHE_DIR.exists():
-        DEFAULT_CACHE_DIR.mkdir()
-    fname = DEFAULT_CACHE_DIR / name
-    try:
-        with open(fname, "w", encoding="UTF-8") as file:
-            data = yaml.safe_dump(cache.context)
-            logger.info("save cache file to %s", str(fname))
-            file.write(data)
-    except PermissionError as error:
-        raise JujuSpellError(f"permission denied to write to file `{fname}`.") from error
-    except Exception as error:
-        raise JujuSpellError(f"{str(error)}.") from error
-
-
-def load_from_cache(name: Union[str, Path]) -> Cache:
-    """Load data from the default cache directory named by `name`."""
-    fname = DEFAULT_CACHE_DIR / name
-    try:
-        with open(fname, "r", encoding="UTF-8") as file:
-            data = yaml.safe_load(file)
-            logger.info("load cache file from %s", str(fname))
-            return Cache(**data)
-    except FileNotFoundError as error:
-        raise JujuSpellError(f"`{fname}` does not exists.") from error
-    except PermissionError as error:
-        raise JujuSpellError(f"permission denied to read from file `{fname}`.") from error
-    except Exception as error:
-        raise JujuSpellError(f"{str(error)}.") from error
