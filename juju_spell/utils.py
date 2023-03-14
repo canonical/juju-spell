@@ -99,6 +99,11 @@ class FileCache(Cache, FileCacheContext):
         return self.timestamp + self.policy.ttl < time()
 
     @property
+    def need_refresh(self) -> bool:
+        """Check if the cache needs refresh or not."""
+        return self.expired and self.policy.auto_refresh
+
+    @property
     def context(self) -> Dict[str, Any]:
         """Get the file cache context as a dictionary."""
         return dataclasses.asdict(self)

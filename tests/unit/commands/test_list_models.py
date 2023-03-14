@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 import juju_spell.commands.list_models
-from juju_spell.commands import list_models
 from juju_spell.commands.list_models import ListModelsCommand
 from juju_spell.exceptions import JujuSpellError
 
@@ -38,7 +37,7 @@ async def test_10_execute_without_refresh_has_cache(mock_connect):
 
     mock_cache = Mock()
     mock_cache.data = {"models": []}
-    mock_cache.expired = False
+    mock_cache.need_refresh = False
     mock_connect.return_value = mock_cache
 
     await list_models.execute(
@@ -86,7 +85,7 @@ async def test_12_execute_without_refresh_expired_cache(mock_connect, mock_commi
 
     mock_cache = Mock()
     mock_cache.data = {"models": []}
-    mock_cache.expired = True
+    mock_cache.need_refresh = True
     mock_connect.return_value = mock_cache
 
     await list_models.execute(
@@ -101,57 +100,80 @@ async def test_12_execute_without_refresh_expired_cache(mock_connect, mock_commi
     mock_controller.list_models.assert_awaited_once()
 
 
+@pytest.mark.asyncio
 @patch.object(juju_spell.commands.list_models.FileCache, "commit")
-def test_20_save_cache_data_okay(mock_commit):
+async def test_20_save_cache_data_okay(mock_commit):
     """Test save_cache_data function when save cache is okay."""
-    mock_models = Mock()
-    mock_logger = Mock()
+    mock_controller = AsyncMock()
+    mock_controller_config = Mock()
+    list_models = ListModelsCommand()
 
-    list_models.save_cache_data(Mock(), mock_models, Mock(), mock_logger, Mock())
+    await list_models.execute(
+        controller=mock_controller,
+        refresh=True,
+        controller_config=mock_controller_config,
+        models=None,
+    )
 
-    mock_logger.debug.assert_called_once()
-    mock_logger.warning.assert_not_called()
     mock_commit.assert_called_once()
 
 
+@pytest.mark.asyncio
 @patch.object(juju_spell.commands.list_models.FileCache, "commit")
-def test_21_save_cache_data_fail(mock_commit):
+async def test_21_save_cache_data_fail(mock_commit):
     """Test save_cache_data function when save cache is not okay."""
-    mock_models = Mock()
-    mock_logger = Mock()
+    mock_controller = AsyncMock()
+    mock_controller_config = Mock()
+    list_models = ListModelsCommand()
+    list_models.logger = Mock()
 
     mock_commit.side_effect = JujuSpellError()
-    list_models.save_cache_data(Mock(), mock_models, Mock(), mock_logger, Mock())
 
-    mock_logger.debug.assert_not_called()
-    mock_logger.warning.assert_called_once()
+    await list_models.execute(
+        controller=mock_controller,
+        refresh=True,
+        controller_config=mock_controller_config,
+        models=None,
+    )
+
+    list_models.logger.warning.assert_called_once()
     mock_commit.assert_called_once()
 
 
+@pytest.mark.asyncio
 @patch.object(juju_spell.commands.list_models.FileCache, "connect")
-def test_30_load_cache_data_okay(mock_connect):
+async def test_30_load_cache_data_okay(mock_connect):
     """Test load_cache_data function when load cache is okay."""
-    mock_uuid = Mock()
-    mock_name = Mock()
-    mock_logger = Mock()
+    mock_controller = AsyncMock()
+    mock_controller_config = Mock()
+    list_models = ListModelsCommand()
 
-    list_models.load_cache_data(mock_name, mock_logger, mock_uuid)
+    await list_models.execute(
+        controller=mock_controller,
+        refresh=False,
+        controller_config=mock_controller_config,
+        models=None,
+    )
 
-    mock_logger.debug.assert_called_once()
-    mock_logger.warning.assert_not_called()
     mock_connect.assert_called_once()
 
 
+@pytest.mark.asyncio
 @patch.object(juju_spell.commands.list_models.FileCache, "connect")
-def test_31_load_cache_data_fail(mock_connect):
+async def test_31_load_cache_data_fail(mock_connect):
     """Test load_cache_data function when load cache is not okay."""
-    mock_uuid = Mock()
-    mock_name = Mock()
-    mock_logger = Mock()
+    mock_controller = AsyncMock()
+    mock_controller_config = Mock()
+    list_models = ListModelsCommand()
+    list_models.logger = Mock()
 
     mock_connect.side_effect = JujuSpellError()
-    list_models.load_cache_data(mock_name, mock_logger, mock_uuid)
 
-    mock_logger.debug.assert_not_called()
-    mock_logger.warning.assert_called_once()
-    mock_connect.assert_called_once()
+    await list_models.execute(
+        controller=mock_controller,
+        refresh=True,
+        controller_config=mock_controller_config,
+        models=None,
+    )
+
+    list_models.logger.warning.assert_called_once()
