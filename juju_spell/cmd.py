@@ -5,6 +5,7 @@ import inspect
 import logging
 import os
 import sys
+import traceback
 from typing import Any, List
 
 from craft_cli import (
@@ -152,29 +153,31 @@ def exec_cmd() -> int:
     try:
         _run_dispatcher(dispatcher)
         emit.ended_ok()
-    except ArgumentParsingError as error:
-        print(error, file=sys.stderr)  # to stderr, as argparse normally does
+    except ArgumentParsingError as err:
+        print(err, file=sys.stderr)  # to stderr, as argparse normally does
         emit.ended_ok()
         return_code = 127
-    except ProvideHelpException as error:
-        print(error, file=sys.stderr)  # to stderr, as argparse normally does
+    except ProvideHelpException as err:
+        print(err, file=sys.stderr)  # to stderr, as argparse normally does
         emit.ended_ok()
         return_code = 0
-    except JujuSpellError as error:
-        print(str(error), file=sys.stderr)  # to stderr, as argparse normally does
-        emit.ended_ok()
-        return_code = 1
     except CraftError as err:
         emit.error(err)
         return_code = 1
-    except KeyboardInterrupt as exc:
+    except KeyboardInterrupt as err:
         craft_error = CraftError("Interrupted.")
-        craft_error.__cause__ = exc
+        craft_error.__cause__ = err
         emit.error(craft_error)
         return_code = 130
-    except Exception as exc:  # pylint: disable=W0718
-        craft_error = CraftError(f"Application internal error: {exc!r}")
-        craft_error.__cause__ = exc
+    except (JujuSpellError, Exception) as err:  # pylint: disable=W0718
+        if emit._mode in [  # pylint: disable=W0212
+            EmitterMode.BRIEF,
+            EmitterMode.QUIET,
+            EmitterMode.VERBOSE,
+        ]:
+            print(os.linesep + traceback.format_exc(), file=sys.stderr)
+        craft_error = CraftError(f"Application internal error: {err!r}")
+        craft_error.__cause__ = err
         emit.error(craft_error)
         return_code = 1
 
